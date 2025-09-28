@@ -1,0 +1,145 @@
+region: ap-northeast-1
+stackId: saitou-yuta-cdk-dev
+
+vpc: 
+    vpc: 
+        constructId: Vpc
+        cidr: 10.120.16.0/24
+    securityGroup: 
+        public:  
+            constructId: PublicSecurityGroup
+        private: 
+            constructId: PrivateSecurityGroup
+        bastion: 
+            constructId: BationSecurityGroup
+            peerIpAddresses: 59.132.146.103/32
+        isolated: 
+            constructId: IsolatedSecurityGroup
+secretsManager: 
+    dbSecret: 
+        constructId: DatabaseSecret
+        username: root
+        dbName: saitou-yuta-cdk_dev
+    djangoSecret: 
+        constructId: DjangSecret
+    awsAccessSecret: 
+        constructId: AwsAccessSecret
+    azureOpenAISecret: 
+        constructId: AzureOpenAISecret
+    azureSpeechServiceSecret: 
+        constructId: AzureSpeechServiceSecret
+rds: 
+    dbCluster: 
+        constructId: RdsMySQLInstance
+        dbName: saitou-yuta-cdk_dev
+        masterUsername: root
+        backupRetention: 7
+        backupPreferredWindow: "17:00-18:00"
+    bastion: 
+        constructId: BastionHost
+        keyPair: 
+            constructId: BastionKeyPair
+ecr: 
+    appRepo: 
+        constructId: AppEcrRepo 
+    nginxRepo: 
+        constructId: NginxEcrRepo
+elb: 
+    lb: 
+        constructId: Elb
+        name: saitou-yuta-cdk-dev-elb
+    listener: 
+        http: 
+            constructId: ElbListener
+        https: 
+            constructId: ElbListenerHTTPS
+    targetGroup: 
+        constructId: Tg
+        healthChekPath: /healthcheck/ 
+    certificate: 
+        constructId: ElbSSLCerti
+        arn: arn:aws:acm:ap-northeast-1:133285731447:certificate/076bd2e7-66c0-4e97-a0ef-3abfbb448cae
+waf: 
+    backendApp: 
+        constructId: WafWebACL
+        scope: REGIONAL
+        metricName: MetricForsaitou-yuta-cdkWebACL
+        name: saitou-yuta-cdk-dev-web-acl
+        webACLAssocitation: 
+        constructId: WebACLAssociation
+    ipSet: 
+        v4: 
+            constructId: AdinWhitelistIpSet
+            scope: REGIONAL 
+        v6: 
+            constructId: AdinWhitelistIpSetV6
+            scope: REGIONAL
+    ipWhitelistBucket: 
+        name: ipwhitelist-saitou-yuta-cdk-dev
+        ipv4Filename: admin_ipv4_whitelist.txt
+        ipv6Filename: admin_ipv6_whitelist.txt
+ecs: 
+    cluster: 
+        constructId: Cluster
+    service: 
+        app: 
+        constructId: AppService
+        desiredCount: 0
+    taskDef: 
+        app: 
+        constructId: AppTaskDefinition
+        storage: 
+            gunicorn: 
+                volumeName: gunicorn
+                mountPointPath: 
+                    app: /var/run/gunicorn
+                    nginx: /var/run/gunicorn
+            static:
+                volumeName: static
+                mountPointPath:
+                    app: /var/run/gunicorn
+                    nginx: /var/run/gunicorn
+    container: 
+        app: 
+            id: AppContainer
+            name: app
+    
+        nginx: 
+            id: NginxContainer
+            name: nginx
+            portMappingName: 
+                http: nginx-80-tcp
+                https: nginx-443-tcp
+        celery: 
+            id: CeleryContainer
+            name: celery
+s3: 
+    bucket: 
+        uploaded_files: 
+            constructId: S3Bucket
+            name: saitou-yuta-cdk-uploaded-files-bucket-dev
+    lifecyclerule: 
+        uploaded_files: 
+            name: delete-after-1day
+sqs: 
+    queue: 
+        constructId: SQSQuere
+        name: saitou-yuta-cdk-dev-celery-sqs
+frontend: 
+    s3: 
+        constructId: FrontendBucket
+        backetName: saitou-yuta-cdk-frontend-dev
+    cloudfront: 
+        constructId: FrontendDistribution
+        distributionName: saitou-yuta-cdk-frontend-dev
+        ipAllowlist?: 
+            ipv4Cidrs: ["59.132.146.103/32"]
+            ipv6Cidrs: []
+        waf: 
+            constructId: FrontendWebACL
+            name: saitou-yuta-cdk-frontend-dev-waf
+            scope: CLOUDFRONT
+            metricName: MetricForsaitou-yuta-cdkFrontendWAF
+            webACLAssocitation: 
+                constructId: FrontendWebACLAssociation
+        
