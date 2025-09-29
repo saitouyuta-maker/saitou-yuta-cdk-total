@@ -49,8 +49,10 @@ interface InfraProps extends cdk.StackProps {
       identifier:string;
       dbName: string;
       masterUsername: string;
-      backupRetention: string;
+      backupRetention: number;
+      backupPreferredWindow: string;
       allocatedStorage :number;
+      maxAllocatedStorage: number;
       writer: {
         constructId: string;
       };

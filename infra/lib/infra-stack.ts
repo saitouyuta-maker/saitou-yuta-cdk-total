@@ -13,6 +13,7 @@ import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
 import { Construct } from "constructs";
 import InfraProps from "../common/props/infra-props";
+import { Application } from "aws-cdk-lib/aws-appconfig";
 
 
 export class InfraStack extends cdk.Stack {
@@ -183,5 +184,508 @@ export class InfraStack extends cdk.Stack {
       queueName:props.sqs.queue.name,
       visibilityTimeout: cdk.Duration.minutes(10), //可視性タイムアウト10分
     });
+    ///////////////////
+    // Database
+    ///////////////////
+
+    let envVars = {};
+
+    const instanceType = 
+      props.mode === "prod" || props.mode === "staging"
+        ? ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.SMALL)
+        : ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO);
+
+    const multiAz = props.mode === "prod";
+    const deletionProtection = props.mode === "prod";
+    const maxAllocatedStorate = props.mode === "prod" ? 300: 50;
+
+    const dbInstance = new rds.DatabaseInstance(
+      this,
+      props.rds.dbCluster.constructId,
+      {
+        vpc: vpc,
+        vpcSubnets: {
+          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
+        },
+        databaseName: props.rds.dbCluster.dbName,
+        securityGroups: [isolatedSg],
+        engine: rds.DatabaseInstanceEngine.mysql({
+          version: rds.MysqlEngineVersion.VER_8_0,
+        }),
+        instanceType,
+        credentials: rds.Credentials.fromSecret(
+          dbSecret,
+          dbSecret.secretValueFromJson("username").unsafeUnwrap()
+        ),
+        allocatedStorage: 21,
+        maxAllocatedStorage: maxAllocatedStorate,
+        backupRetention: cdk.Duration.days(props.rds.dbCluster.backupRetention),
+        preferredBackupWindow: props.rds.dbCluster.backupPreferredWindow,
+        publiclyAccessible: false,
+        multiAz,
+        deletionProtection,
+        storageEncrypted: true,
+      }
+    );
+
+    // Environment variables used in ECS task definition (api container)
+    envVars = {
+      DEPLOY_ENV: props.mode,
+      DB_WRITE_HOST: dbInstance.instanceEndpoint.hostname,
+      DB_WRITE_PORT: dbInstance.instanceEndpoint.port,
+      DB_READ_HOST: dbInstance.instanceEndpoint.hostname,
+      DB_READ_PORT: dbInstance.instanceEndpoint.port,
+      SQS_QUEUE_NAME: sqsQueue.queueName,
+      AWS_SQS_URL: sqsQueue.queueUrl,
+      REDIS_DB: "0",
+      ENVIRONMENT: props.mode,
+    };
+    ///////////////////
+    // ECS
+    ///////////////////
+
+    const apiRepository = new ecr.Repository(
+      this,
+      props.ecr.appRepo.constructId,
+      {
+        //repositoryName: props.ecr.ecr.apiRepo,name,
+        imageScanOnPush: true,
+        removalPolicy:
+          props.mode == "prod"
+            ? cdk.RemovalPolicyRETAIN
+            : cdk.RemovalPolicy.DESTROY,
+        emptyOnDelete: !(props.mode == "prod"),
+      }
+    );
+    apiRepository.addLifecycleRule({
+      maxImageCount: 3,
+    });
+    
+    const nginxRepository = new ecr.Repository(
+      this,
+      props.ecr.nginxRepo.constructId,
+      {
+        //repositoryName: props.ecr.ecr.nginxRepo,name,
+        imageScanOnPush: true,
+        removalPolicy:
+          props.mode == "prod"
+            ? cdk.RemovalPolicyRETAIN
+            : cdk.RemovalPolicy.DESTROY,
+        emptyOnDelete: !(props.mode == "prod"),
+      }
+    );
+    nginxRepository.addLifecycleRule({
+      maxImageCount: 3,
+    });
+    ///////////////////
+    // ELB
+    ///////////////////
+
+    const lb = new elbv2.ApplicationLoadBalancer(
+      this,
+      props.elb.lb.constructId,
+      {
+        vpc: vpc,
+        loadBalancerName :props.elb.lb.name,
+        internetFacing: true,
+        securityGroup: publicSg,
+        vpcSubnets: {
+          subnetType: ec2.SubnetType.PUBLIC,
+        },
+      }
+    );
+
+    const targetGroup = new elbv2.ApplicationTargetGroup(
+      this,
+      props.elb.targetGroup.constructId,
+      {
+        targetType: elbv2.TargetType.IP,
+        vpc: vpc,
+        port: 80,
+        protocol: elbv2.ApplicationProtocol.HTTP,
+        healthCheck: {
+          path: props.elb.targetGroup.healthChekPath,
+          healthyHttpCodes: "200",
+          healthyThresholdCount: 2,
+          interval: cdk.Duration.seconds(10),
+        },
+      }
+    );
+
+    //ARN
+
+    const certificate = acm.Certificate.fromCertificateArn(
+      this,
+      props.elb.certificate.constructId,
+      props.elb.certificate.arn
+    );
+
+    // lb.addListener(props.elb.listener.https.constructId, {
+    //   port: 443,
+    //   defaultTargetGroups: [targetGroup],
+    //   certificates: [certificate],
+    // });
+
+    // lb.addListener(props.elb.listener.http.constructId, {
+    //   port: 80,
+    //   defaultAction: elbv2.ListenerAction.redirect({
+    //       protocol: elbv2.ApplicationProtocol.HTTPS,
+    //   }),
+    // });
+
+    lb.addListener(props.elb.listener.http.constructId, {
+      port: 80,
+      // defaultAction: elbv2.ListenerAction.redirect({
+      //     protocol: elbv2.ApplicationProtocol.HTTPS,
+      // }),
+      defaultTargetGroups: [targetGroup],
+    });
+    ///////////////////
+    // WAF
+    ///////////////////
+
+    interface WafRule {
+      name:string;
+      rule: wafv2.CfnWebACL.RuleProperty;
+    }
+
+    const awsManagedRules :WafRule[] = [
+      //AWS IP Reputation list incluudes malicious actors/bots and is regularly updated
+      {
+        name: "AWS-AWSManagedRulesAmazonIpReputationList",
+        rule: {
+          name: "AWS-AWSManagedRulesAmazonIpReputationList",
+          priority: 10,
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: "AWS",
+              name: "AWS-AWSManagedRulesAmazonIpReputationList",
+            },
+          },
+          overrideAction: {
+            none: {},
+          },
+          visibilityConfig: {
+            sampledRequestsEnabled: true,
+            cloudWatchMetricsEnabled: true,
+            metricName: "AWS-AWSManagedRulesAmazonIpReputationList"
+          },
+        },
+      },
+      //レートリミットルールを追加
+      {
+        name: "RateLimitRule",
+        rule: {
+          name: "RateLimitRule",
+          priority: 15,
+          statement: {
+            rateBasedStatement: {
+              limit: 1000,
+              aggregateKeyType: "IP",
+            },
+          },
+          action: {
+            block: {},
+          },
+          visibilityConfig: {
+            sampledRequestsEnabled: true,
+            cloudWatchMetricsEnabled: true,
+            metricName: "RateLimitRule",
+          },
+        },
+      },
+      //The core rule set (CRS) rule group contains rules that are generally applicable to web applications
+      {
+        name: "AWS-AWSManagedRulesAmazonCommonRuleSet",
+        rule: {
+          name: "AWS-AWSManagedRulesAmazonCommonRuleSet",
+          priority: 20,
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: "AWS",
+              name: "AWSManagedRulesCommonRuleSet",
+              //excludeRules: [],
+              ruleActionOverrides: [
+                {
+                  name: "SizeRestrictions_BODY",
+                  actionToUse: {
+                    count: {},
+                  },
+                },
+              ],
+            },
+          },
+          overrideAction: {
+            none: {},
+          },
+          visibilityConfig: {
+            sampledRequestsEnabled: true,
+            cloudWatchMetricsEnabled: true,
+            metricName: "AWS-AWSManagedRulesAmazonCommonRuleSet"
+          },
+        },
+      },
+      //Blocks common SQL injection
+      {
+        name: "AWSManagedRulesSQLiRuleSet",
+        rule: {
+          name: "AWSManagedRulesSQLiRuleSet",
+          priority: 30,
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: "AWS",
+              name: "AWSManagedRulesSQLiRuleSet",
+              //excludeRules: [],
+            },
+          },
+          overrideAction: {
+            none: {},
+          },
+          visibilityConfig: {
+            sampledRequestsEnabled: true,
+            cloudWatchMetricsEnabled: true,
+            metricName: "AWSManagedRulesSQLiRuleSet"
+          },
+        },
+      },
+      //Blocks attacks targeting LFI(Local File Injection) for linux systems
+      {
+        name: "AWSManagedRulesLinux",
+        rule: {
+          name: "AWSManagedRulesLinux",
+          priority: 50,
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: "AWS",
+              name: "AWSManagedRulesLinux",
+              //excludeRules: [],
+            },
+          },
+          overrideAction: {
+            none: {},
+          },
+          visibilityConfig: {
+            sampledRequestsEnabled: true,
+            cloudWatchMetricsEnabled: true,
+            metricName: "AWSManagedRulesSQLiRuleSet"
+          },
+        },
+      },
+    ];
+
+    const backendWebACL = new wafv2.CfnWebACL(
+      this,
+      props.waf.backendApp.constructId,
+      {
+        defaultAction: {
+          allow: {},
+        },
+        scope: props.waf.backendApp.scope,
+        visibilityConfig: {
+          cloudWatchMetricsEnabled: true,
+          metricName: props.waf.backendApp.metricName,
+          sampledRequestsEnabled: true,
+        },
+        name: props.waf.backendApp.name,
+        rules: awsManagedRules.map((wafRule) => wafRule.rule),
+      }
+    );
+
+    new wafv2.CfnWebACLAssociation(
+      this,
+      props.waf.backendApp.webACLAssocitation.constructId,
+      {
+        resourceArn: lb.loadBalancerArn,
+        webAclArn: backendWebACL.attrArn,
+      }
+    );
+    ///////////////////
+    // ECS
+    ///////////////////
+
+    // Cluster and Task definitions
+    const cluster = new ecs.Cluster(
+      this,
+      props.ecs.cluster.constructId,
+      {
+        vpc: vpc,
+        enableFargateCapacityProviders: true,
+      }
+    );
+
+    let taskCpu = 1024; // 1 vCPU if dev
+    let taskMemory = 2048; // 2 GB if dev
+    if(props.mode == "staging") {
+      taskCpu = 1024; // 1 vCPU if staging
+      taskMemory = 2048; // 2 GB if staging
+    } else if (props.mode == "prod") {
+      taskCpu = 1024; // 1 vCPU if prod
+      taskMemory = 2048; // 2 GB if prod
+    }
+
+    const appTaskDef = new ecs.FargateTaskDefinition(
+      this,
+      props.ecs.taskDef.app.constructId,
+      {
+        cpu: taskCpu,
+        memoryLimitMiB: taskMemory,
+        ephemeralStorageGiB: 21,
+      }
+    );
+
+    const nginxContainer = appTaskDef.addContainer(
+      props.ecs.container.nginx.id,
+      {
+        containerName: props.ecs.container.nginx.name,
+        image: ecs.ContainerImage.fromEcrRepository(nginxRepository),
+        portMappings: [
+          {
+          containerPort: 80,
+          appProtocol:ecs.AppProtocol.http,
+          name: props.ecs.container.nginx.portMappingName.http,
+          },
+        ],
+        logging: ecs.LogDriver.awsLogs({
+          streamPrefix: "ecs",
+        }),
+      }
+    );
+
+    const appContainer = appTaskDef.addContainer(props.ecs.container.app.id, {
+      containerName: props.ecs.container.app.name,
+      image: ecs.ContainerImage.fromEcrRepository(apiRepository),
+      logging: ecs.LogDriver.awsLogs({
+          streamPrefix: "ecs",
+    }),
+    environment: envVars,
+    secrets: {
+      DB_WRITE_NAME: ecs.Secret.fromSecretsManager(dbSecret,"dbname"),
+      DB_WRITE_USER: ecs.Secret.fromSecretsManager(dbSecret,"username"),
+      DB_WRITE_PASSWORD: ecs.Secret.fromSecretsManager(dbSecret,"password"),
+      DB_READ_NAME: ecs.Secret.fromSecretsManager(dbSecret,"dbname"),
+      DB_READ_USER: ecs.Secret.fromSecretsManager(dbSecret,"username"),
+      DB_READ_PASSWORD: ecs.Secret.fromSecretsManager(dbSecret,"password"),
+      AWS_ACCESS_KEY_ID: ecs.Secret.fromSecretsManager(awsAccessSecret,"awsAccessKeyId"),
+      AWS_SECRET_ACCESS_KEY: ecs.Secret.fromSecretsManager(awsAccessSecret,"awsAccessKeyKey"),
+      AZURE_OPENAI_ENDPOINT: ecs.Secret.fromSecretsManager(azureOpenAISecret,"azureOpenAIEndpoint"),
+      AZURE_OPENAI_KEY: ecs.Secret.fromSecretsManager(azureOpenAISecret,"azureOpenAIKey"),
+    },
+    //Running "collectstatic" at rutime so that static files can be found by NGINX
+    command: [
+      "bin/bash",
+      "-c",
+      "python manage.py collectstatic --noinput && gunicorn --bind=unix: /var/run/gunicorn/gunicorn.sock config.wsgi:application --workers=2 --timeout 300 --keep-alive 65",
+    ],
+  });
+
+  const celeryContainer = appTaskDef.addContainer(
+    props.ecs.container.celery.id,
+    {
+      containerName: props.ecs.container.celery.name,
+      image: ecs.ContainerImage.fromEcrRepository(apiRepository),
+      logging: ecs.LogDriver.awsLogs({
+          streamPrefix: "ecs",
+    }),
+      environment: envVars,
+      secrets: {
+        DB_WRITE_NAME: ecs.Secret.fromSecretsManager(dbSecret,"dbname"),
+        DB_WRITE_USER: ecs.Secret.fromSecretsManager(dbSecret,"username"),
+        DB_WRITE_PASSWORD: ecs.Secret.fromSecretsManager(dbSecret,"password"),
+        DB_READ_NAME: ecs.Secret.fromSecretsManager(dbSecret,"dbname"),
+        DB_READ_USER: ecs.Secret.fromSecretsManager(dbSecret,"username"),
+        DB_READ_PASSWORD: ecs.Secret.fromSecretsManager(dbSecret,"password"),
+        AWS_ACCESS_KEY_ID: ecs.Secret.fromSecretsManager(awsAccessSecret,"awsAccessKeyId"),
+        AWS_SECRET_ACCESS_KEY: ecs.Secret.fromSecretsManager(awsAccessSecret,"awsAccessKeyKey"),
+        AZURE_OPENAI_ENDPOINT: ecs.Secret.fromSecretsManager(azureOpenAISecret,"azureOpenAIEndpoint"),
+        AZURE_OPENAI_KEY: ecs.Secret.fromSecretsManager(azureOpenAISecret,"azureOpenAIKey"),
+      },
+      //Running "collectstatic" at rutime so that static files can be found by NGINX
+      command: [
+      "bin/bash",
+      "-c",
+      "celery -A config worker -l INFO --concurrency=2",
+      ],
+    }
+  );
+
+  const gunicornVolume: cdk.aws_ecs.Volume = {
+    name: props.ecs.taskDef.app.storage.gunicorn.volumeName
+  };
+  const staticFilesVolume: cdk.aws_ecs.Volume = {
+    name: props.ecs.taskDef.app.storage.gunicorn.volumeName,
+  };
+
+  appTaskDef.addVolume(gunicornVolume);
+  appTaskDef.addVolume(staticFilesVolume);
+
+  appContainer.addMountPoints(
+    {
+      containerPath:
+        props.ecs.taskDef.app.storage.gunicorn.mountPointPath.app,
+      readOnly: false,
+      sourceVolume: props.ecs.taskDef.app.storage.gunicorn.volumeName,
+    },
+    {
+      containerPath:
+        props.ecs.taskDef.app.storage.static.mountPointPath.app,
+      readOnly: false,
+      sourceVolume: props.ecs.taskDef.app.storage.static.volumeName,
+    },
+  );
+  nginxContainer.addMountPoints(
+    {
+      containerPath:
+        props.ecs.taskDef.app.storage.gunicorn.mountPointPath.nginx,
+      readOnly: false,
+      sourceVolume: props.ecs.taskDef.app.storage.gunicorn.volumeName,
+    },
+    {
+      containerPath:
+        props.ecs.taskDef.app.storage.static.mountPointPath.nginx,
+      readOnly: false,
+      sourceVolume: props.ecs.taskDef.app.storage.static.volumeName,
+    },
+  );
+
+  //services
+  const appService = new ecs.FargateService(
+    this,
+    props.ecs.service.app.constructId,
+    {
+      cluster: cluster,
+      taskDefinition: appTaskDef,
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+      },
+      securityGroups: [privateSg],
+      // desiredCount: props.mode === "prod" ? 2 : 1,
+      desiredCount: 0,
+      assignPublicIp: false,
+      capacityProviderStrategies: [
+        {
+          capacityProvider: "FARGATE",
+          weight: 1,
+        },
+      ],
+      circuitBreaker: {
+        rollback: true,
+      },
+    }
+  );
+
+  targetGroup.addTarget(appService);
+
+  const scaling = appService.autoScaleTaskCount({
+    minCapacity: props.mode === "prod" ? 2 : 1,
+    maxCapacity: props.mode === "prod" ? 3 : 2,
+  });
+
+  scaling.scaleOnCpuUtilization("CpuScaling", {
+    targetUtilizationPercent: 80,
+  });
+  scaling.scaleOnMemoryUtilization("MemoryScaling", {
+    targetUtilizationPercent: 80,
+  });
+
   }
 }
