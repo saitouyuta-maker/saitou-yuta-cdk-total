@@ -269,7 +269,7 @@ export class InfraStack extends cdk.Stack {
         imageScanOnPush: true,
         removalPolicy:
           props.mode == "prod"
-            ? cdk.RemovalPolicyRETAIN
+            ? cdk.RemovalPolicy.RETAIN
             : cdk.RemovalPolicy.DESTROY,
         emptyOnDelete: !(props.mode == "prod"),
       }
