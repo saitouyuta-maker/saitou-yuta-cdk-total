@@ -30,17 +30,17 @@ export class InfraStack extends cdk.Stack {
         {
           name: "public",
           subnetType: ec2.SubnetType.PUBLIC,
-          cidrMask: 24,
+          cidrMask: 27,
         },
         {
           name: "private",
           subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
-          cidrMask: 24,
+          cidrMask: 27,
         },
         {
           name: "isolated",
           subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
-          cidrMask: 24,
+          cidrMask: 27,
         },
       ],
       natGateways: props.mode == "prod" ? 2 : 1,
