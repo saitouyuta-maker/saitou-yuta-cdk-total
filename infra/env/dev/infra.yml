@@ -83,22 +83,23 @@ ecs:
         constructId: Cluster
     service: 
         app: 
-        constructId: AppService
-        desiredCount: 0
+            constructId: AppService
+            desiredCount: 0
     taskDef: 
         app: 
-        constructId: AppTaskDefinition
-        storage: 
-            gunicorn: 
-                volumeName: gunicorn
-                mountPointPath: 
-                    app: /var/run/gunicorn
-                    nginx: /var/run/gunicorn
-            static:
-                volumeName: static
-                mountPointPath:
-                    app: /var/run/gunicorn
-                    nginx: /var/run/gunicorn
+            constructId: AppTaskDefinition
+            name: saitou-yuta-cdk-dev-app-td
+            storage: 
+                gunicorn: 
+                    volumeName: gunicorn
+                    mountPointPath: 
+                        app: /var/run/gunicorn
+                        nginx: /var/run/gunicorn
+                static:
+                    volumeName: static
+                    mountPointPath:
+                        app: /var/run/gunicorn
+                        nginx: /var/run/gunicorn
     container: 
         app: 
             id: AppContainer
