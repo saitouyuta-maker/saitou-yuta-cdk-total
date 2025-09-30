@@ -449,29 +449,29 @@ export class InfraStack extends cdk.Stack {
           },
         },
       },
-      // //Blocks attacks targeting LFI(Local File Injection) for linux systems
-      // {
-      //   name: "AWSManagedRuleLinux",
-      //   rule: {
-      //     name: "AWSManagedRuleLinux",
-      //     priority: 50,
-      //     statement: {
-      //       managedRuleGroupStatement: {
-      //         vendorName: "AWS",
-      //         name: "AWSManagedRuleLinux",
-      //         //excludeRules: [],
-      //       },
-      //     },
-      //     overrideAction: {
-      //       none: {},
-      //     },
-      //     visibilityConfig: {
-      //       sampledRequestsEnabled: true,
-      //       cloudWatchMetricsEnabled: true,
-      //       metricName: "AWSManagedRuleLinux"
-      //     },
-      //   },
-      // },
+      //Blocks attacks targeting LFI(Local File Injection) for linux systems
+      {
+        name: "AWSManagedRuleLinux",
+        rule: {
+          name: "AWSManagedRuleLinux",
+          priority: 50,
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: "AWS",
+              name: "AWSManagedRuleLinux",
+              //excludeRules: [],
+            },
+          },
+          overrideAction: {
+            none: {},
+          },
+          visibilityConfig: {
+            sampledRequestsEnabled: true,
+            cloudWatchMetricsEnabled: true,
+            metricName: "AWSManagedRuleLinux"
+          },
+        },
+      },
     ];
 
     const backendWebACL = new wafv2.CfnWebACL(
