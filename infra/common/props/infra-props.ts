@@ -103,7 +103,7 @@ interface InfraProps extends cdk.StackProps {
       scope: string;
       metricName: string;
       name: string;
-      webACLAssocitation: {
+      webACLAssociation: {
         constructId: string;
       };
       ipSet: {

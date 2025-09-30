@@ -65,7 +65,7 @@ waf:
         scope: REGIONAL
         metricName: MetricForsaitou-yuta-cdkWebACL
         name: saitou-yuta-cdk-dev-web-acl
-        webACLAssocitation: 
+        webACLAssociation: 
             constructId: WebACLAssociation
     ipSet: 
         v4: 
