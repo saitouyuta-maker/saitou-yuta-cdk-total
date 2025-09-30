@@ -492,9 +492,7 @@ export class InfraStack extends cdk.Stack {
       }
     );
 
-    backendWebACL.node.addDependency(lb);
-
-    new wafv2.CfnWebACLAssociation(
+    const webACLAssociation = new wafv2.CfnWebACLAssociation(
       this,
       props.waf.backendApp.webACLAssociation.constructId,
       {
@@ -502,6 +500,10 @@ export class InfraStack extends cdk.Stack {
         webAclArn: backendWebACL.attrArn,
       }
     );
+    
+    webACLAssociation.node.addDependency(lb);
+    webACLAssociation.node.addDependency(backendWebACL);
+
     ///////////////////
     // ECS
     ///////////////////
