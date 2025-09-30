@@ -195,7 +195,7 @@ interface InfraProps extends cdk.StackProps {
   frontend: {
     s3: {
       constructId: string;
-      backetName: string;
+      bucketName: string;
     };
     cloudfront: {
       constructId: string;

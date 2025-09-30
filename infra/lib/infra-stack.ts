@@ -14,6 +14,8 @@ import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
 import { Construct } from "constructs";
 import InfraProps from "../common/props/infra-props";
 import { Application } from "aws-cdk-lib/aws-appconfig";
+import { CfnCACertificate } from "aws-cdk-lib/aws-iot";
+import { CloudFrontTarget } from "aws-cdk-lib/aws-route53-targets";
 
 
 export class InfraStack extends cdk.Stack {
@@ -689,6 +691,131 @@ export class InfraStack extends cdk.Stack {
   scaling.scaleOnMemoryUtilization("MemoryScaling", {
     targetUtilizationPercent: 80,
   });
+  ///////////////////
+  // Frontend: S3 + CloudFront (+ WAF)
+  ///////////////////
 
+  //S3 bucket for frontend hosting (private,accessd via CloudFront OAI)
+  const frontendBucket = new s3.Bucket(
+    this,
+    props.frontend.s3.constructId,
+    {
+      bucketName: props.frontend.s3.bucketName,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      enforceSSL: true,
+      versioned: false,
+      removalPolicy:
+        props.mode == "prod"
+        ? cdk.RemovalPolicy.RETAIN
+        : cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: !(props.mode == "prod"),
+    }
+  );
+
+  //CloudFront Origin Access Identity
+  const frontendOai = new cloudfront.OriginAccessIdentity(
+    this,
+    "FrontendOAI",
+    {
+      comment: `OAI for ${props.frontend.s3.bucketName}`,
+    }
+  );
+  frontendBucket.grantRead(frontendOai);
+
+  // // Optional: ACM certificate and custom domain for CloudFront
+  // let cfCertificate: acm.ICertificate | undefined = undefined;
+  // const hasCustomDomain = Boolean(
+  //   props.frontend.cloudfront.domainName &&
+  //     props.frontend.cloudfront.certificateArn
+  // );
+  // if (hasCustomDomain) {
+  //   cfCertificate = acm.Certificate.fromCertificateArn(
+  //     this,
+  //     "FrontendSSLCertificate",
+  //     props.frontend.cloudfront.certificateArn as string
+  //   );
+  // }
+
+  // CloudFront Distribution (SPA fallback: 403/404 -> /index.html)
+  // API用オリジン (ALB)を作成し、/api/*をALBへプロキシ
+  const apiOrigin = new origins.HttpOrigin(lb.loadBalancerDnsName, {
+    protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+    httpsPort: 80,
+    originPath: "",
+  });
+
+
+  //default behaivior options (attach function if defined)
+  const defaultBehaviorOptions: cloudfront.BehaviorOptions = {
+    origin: new origins.S3Origin(frontendBucket, {
+      originAccessIdentity: frontendOai,
+    }),
+    viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+    allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
+    cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+    responseHeadersPolicy: cloudfront.ResponseHeadersPolicy.SECURITY_HEADERS,
+    // ...(ipWhitelistFunction
+    //   ? {
+    //       functionAssociations: [
+    //         {
+    //         function: ipWhitelistFunction,
+    //         eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
+    //         },
+    //       ],
+    //     }
+    //   : {}),
+    };
+
+    const frontendDistribution = new cloudfront.Distribution(
+      this,
+      props.frontend.cloudfront.constructId,
+      {
+        defaultRootObject: "index.html",
+        // domainNames: hasCustomDomain
+        //   ? [props.frontend.cloudfront.domainName as string]
+        //   : undefined,
+        // certificate: CfnCACertificate,
+        defaultBehavior: defaultBehaviorOptions,
+        errorResponses: [
+          {
+            httpStatus: 403,
+            responseHttpStatus: 200,
+            responsePagePath: "/index.html",
+            ttl: cdk.Duration.seconds(0),
+          },
+          {
+            httpStatus: 404,
+            responseHttpStatus: 200,
+            responsePagePath: "/index.html",
+            ttl: cdk.Duration.seconds(0),
+          },
+        ],
+        comment: props.frontend.cloudfront.distributionName,
+        priceClass: cloudfront.PriceClass.PRICE_CLASS_200,
+      }
+    );
+
+    // /api/* をALBへプロキシするビヘイビア
+    const apiBehabiorOptions: cloudfront.BehaviorOptions = {
+      origin: apiOrigin,
+      allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+      cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+      originRequestPolicy:
+        cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+      viewerProtocolPolicy:
+        cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+      // ...(ipWhitelistFunction
+      //   ? {
+      //     functionAssociations: [
+      //       {
+      //         function: ipWhitelistFunction,
+      //         eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
+      //       },
+      //     ],
+      //   }
+      // : {}),
+    };
+    frontendDistribution.addBehavior("/api/*", apiOrigin, apiBehabiorOptions);
   }
 }

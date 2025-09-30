@@ -129,7 +129,7 @@ sqs:
 frontend: 
     s3: 
         constructId: FrontendBucket
-        backetName: saitou-yuta-cdk-frontend-dev
+        bucketName: saitou-yuta-cdk-frontend-dev
     cloudfront: 
         constructId: FrontendDistribution
         distributionName: saitou-yuta-cdk-frontend-dev
