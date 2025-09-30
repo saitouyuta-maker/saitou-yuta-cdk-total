@@ -426,29 +426,29 @@ export class InfraStack extends cdk.Stack {
           },
         },
       },
-      // //Blocks common SQL injection
-      // {
-      //   name: "AWSManagedRulesSQLiRuleSet",
-      //   rule: {
-      //     name: "AWSManagedRulesSQLiRuleSet",
-      //     priority: 30,
-      //     statement: {
-      //       managedRuleGroupStatement: {
-      //         vendorName: "AWS",
-      //         name: "AWSManagedRulesSQLiRuleSet",
-      //         //excludeRules: [],
-      //       },
-      //     },
-      //     overrideAction: {
-      //       none: {},
-      //     },
-      //     visibilityConfig: {
-      //       sampledRequestsEnabled: true,
-      //       cloudWatchMetricsEnabled: true,
-      //       metricName: "AWSManagedRulesSQLiRuleSet"
-      //     },
-      //   },
-      // },
+      //Blocks common SQL injection
+      {
+        name: "AWSManagedRulesSQLiRuleSet",
+        rule: {
+          name: "AWSManagedRulesSQLiRuleSet",
+          priority: 30,
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: "AWS",
+              name: "AWSManagedRulesSQLiRuleSet",
+              //excludeRules: [],
+            },
+          },
+          overrideAction: {
+            none: {},
+          },
+          visibilityConfig: {
+            sampledRequestsEnabled: true,
+            cloudWatchMetricsEnabled: true,
+            metricName: "AWSManagedRulesSQLiRuleSet"
+          },
+        },
+      },
       // //Blocks attacks targeting LFI(Local File Injection) for linux systems
       // {
       //   name: "AWSManagedRuleLinux",
