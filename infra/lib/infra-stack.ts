@@ -20,6 +20,7 @@ export class InfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: InfraProps) {
     super(scope, id, props);
 
+  
     ///////////////////
     // VPC
     ///////////////////
@@ -522,6 +523,7 @@ export class InfraStack extends cdk.Stack {
       taskCpu = 1024; // 1 vCPU if prod
       taskMemory = 2048; // 2 GB if prod
     }
+    console.log("props.ecs:", JSON.stringify(props.ecs, null, 2));
 
     const appTaskDef = new ecs.FargateTaskDefinition(
       this,
