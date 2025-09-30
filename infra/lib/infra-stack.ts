@@ -395,37 +395,37 @@ export class InfraStack extends cdk.Stack {
           },
         },
       },
-      // //The core rule set (CRS) rule group contains rules that are generally applicable to web applications
-      // {
-      //   name: "AWS-AWSManagedRulesAmazonCommonRuleSet",
-      //   rule: {
-      //     name: "AWS-AWSManagedRulesAmazonCommonRuleSet",
-      //     priority: 20,
-      //     statement: {
-      //       managedRuleGroupStatement: {
-      //         vendorName: "AWS",
-      //         name: "AWSManagedRulesCommonRuleSet",
-      //         //excludeRules: [],
-      //         ruleActionOverrides: [
-      //           {
-      //             name: "SizeRestrictions_BODY",
-      //             actionToUse: {
-      //               count: {},
-      //             },
-      //           },
-      //         ],
-      //       },
-      //     },
-      //     overrideAction: {
-      //       none: {},
-      //     },
-      //     visibilityConfig: {
-      //       sampledRequestsEnabled: true,
-      //       cloudWatchMetricsEnabled: true,
-      //       metricName: "AWS-AWSManagedRulesAmazonCommonRuleSet"
-      //     },
-      //   },
-      // },
+      //The core rule set (CRS) rule group contains rules that are generally applicable to web applications
+      {
+        name: "AWS-AWSManagedRulesAmazonCommonRuleSet",
+        rule: {
+          name: "AWS-AWSManagedRulesAmazonCommonRuleSet",
+          priority: 20,
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: "AWS",
+              name: "AWSManagedRulesCommonRuleSet",
+              //excludeRules: [],
+              ruleActionOverrides: [
+                {
+                  name: "SizeRestrictions_BODY",
+                  actionToUse: {
+                    count: {},
+                  },
+                },
+              ],
+            },
+          },
+          overrideAction: {
+            none: {},
+          },
+          visibilityConfig: {
+            sampledRequestsEnabled: true,
+            cloudWatchMetricsEnabled: true,
+            metricName: "AWS-AWSManagedRulesAmazonCommonRuleSet"
+          },
+        },
+      },
       // //Blocks common SQL injection
       // {
       //   name: "AWSManagedRulesSQLiRuleSet",
