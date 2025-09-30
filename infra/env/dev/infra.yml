@@ -98,8 +98,8 @@ ecs:
                 static:
                     volumeName: static
                     mountPointPath:
-                        app: /var/run/gunicorn
-                        nginx: /var/run/gunicorn
+                        app: /var/run/staticfiles
+                        nginx: /var/www/app/static
     container: 
         app: 
             id: AppContainer
