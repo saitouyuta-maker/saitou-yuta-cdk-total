@@ -395,83 +395,83 @@ export class InfraStack extends cdk.Stack {
           },
         },
       },
-      //The core rule set (CRS) rule group contains rules that are generally applicable to web applications
-      {
-        name: "AWS-AWSManagedRulesAmazonCommonRuleSet",
-        rule: {
-          name: "AWS-AWSManagedRulesAmazonCommonRuleSet",
-          priority: 20,
-          statement: {
-            managedRuleGroupStatement: {
-              vendorName: "AWS",
-              name: "AWSManagedRulesCommonRuleSet",
-              //excludeRules: [],
-              ruleActionOverrides: [
-                {
-                  name: "SizeRestrictions_BODY",
-                  actionToUse: {
-                    count: {},
-                  },
-                },
-              ],
-            },
-          },
-          overrideAction: {
-            none: {},
-          },
-          visibilityConfig: {
-            sampledRequestsEnabled: true,
-            cloudWatchMetricsEnabled: true,
-            metricName: "AWS-AWSManagedRulesAmazonCommonRuleSet"
-          },
-        },
-      },
-      //Blocks common SQL injection
-      {
-        name: "AWSManagedRulesSQLiRuleSet",
-        rule: {
-          name: "AWSManagedRulesSQLiRuleSet",
-          priority: 30,
-          statement: {
-            managedRuleGroupStatement: {
-              vendorName: "AWS",
-              name: "AWSManagedRulesSQLiRuleSet",
-              //excludeRules: [],
-            },
-          },
-          overrideAction: {
-            none: {},
-          },
-          visibilityConfig: {
-            sampledRequestsEnabled: true,
-            cloudWatchMetricsEnabled: true,
-            metricName: "AWSManagedRulesSQLiRuleSet"
-          },
-        },
-      },
-      //Blocks attacks targeting LFI(Local File Injection) for linux systems
-      {
-        name: "AWSManagedRuleLinux",
-        rule: {
-          name: "AWSManagedRuleLinux",
-          priority: 50,
-          statement: {
-            managedRuleGroupStatement: {
-              vendorName: "AWS",
-              name: "AWSManagedRuleLinux",
-              //excludeRules: [],
-            },
-          },
-          overrideAction: {
-            none: {},
-          },
-          visibilityConfig: {
-            sampledRequestsEnabled: true,
-            cloudWatchMetricsEnabled: true,
-            metricName: "AWSManagedRuleLinux"
-          },
-        },
-      },
+      // //The core rule set (CRS) rule group contains rules that are generally applicable to web applications
+      // {
+      //   name: "AWS-AWSManagedRulesAmazonCommonRuleSet",
+      //   rule: {
+      //     name: "AWS-AWSManagedRulesAmazonCommonRuleSet",
+      //     priority: 20,
+      //     statement: {
+      //       managedRuleGroupStatement: {
+      //         vendorName: "AWS",
+      //         name: "AWSManagedRulesCommonRuleSet",
+      //         //excludeRules: [],
+      //         ruleActionOverrides: [
+      //           {
+      //             name: "SizeRestrictions_BODY",
+      //             actionToUse: {
+      //               count: {},
+      //             },
+      //           },
+      //         ],
+      //       },
+      //     },
+      //     overrideAction: {
+      //       none: {},
+      //     },
+      //     visibilityConfig: {
+      //       sampledRequestsEnabled: true,
+      //       cloudWatchMetricsEnabled: true,
+      //       metricName: "AWS-AWSManagedRulesAmazonCommonRuleSet"
+      //     },
+      //   },
+      // },
+      // //Blocks common SQL injection
+      // {
+      //   name: "AWSManagedRulesSQLiRuleSet",
+      //   rule: {
+      //     name: "AWSManagedRulesSQLiRuleSet",
+      //     priority: 30,
+      //     statement: {
+      //       managedRuleGroupStatement: {
+      //         vendorName: "AWS",
+      //         name: "AWSManagedRulesSQLiRuleSet",
+      //         //excludeRules: [],
+      //       },
+      //     },
+      //     overrideAction: {
+      //       none: {},
+      //     },
+      //     visibilityConfig: {
+      //       sampledRequestsEnabled: true,
+      //       cloudWatchMetricsEnabled: true,
+      //       metricName: "AWSManagedRulesSQLiRuleSet"
+      //     },
+      //   },
+      // },
+      // //Blocks attacks targeting LFI(Local File Injection) for linux systems
+      // {
+      //   name: "AWSManagedRuleLinux",
+      //   rule: {
+      //     name: "AWSManagedRuleLinux",
+      //     priority: 50,
+      //     statement: {
+      //       managedRuleGroupStatement: {
+      //         vendorName: "AWS",
+      //         name: "AWSManagedRuleLinux",
+      //         //excludeRules: [],
+      //       },
+      //     },
+      //     overrideAction: {
+      //       none: {},
+      //     },
+      //     visibilityConfig: {
+      //       sampledRequestsEnabled: true,
+      //       cloudWatchMetricsEnabled: true,
+      //       metricName: "AWSManagedRuleLinux"
+      //     },
+      //   },
+      // },
     ];
 
     const backendWebACL = new wafv2.CfnWebACL(
