@@ -451,14 +451,14 @@ export class InfraStack extends cdk.Stack {
       },
       //Blocks attacks targeting LFI(Local File Injection) for linux systems
       {
-        name: "AWSManagedRuleLinux",
+        name: "AWSManagedRulesLinux",
         rule: {
-          name: "AWSManagedRuleLinux",
+          name: "AWSManagedRulesLinux",
           priority: 50,
           statement: {
             managedRuleGroupStatement: {
               vendorName: "AWS",
-              name: "AWSManagedRuleLinux",
+              name: "AWSManagedRulesLinuxRuleSet",
               //excludeRules: [],
             },
           },
@@ -468,7 +468,7 @@ export class InfraStack extends cdk.Stack {
           visibilityConfig: {
             sampledRequestsEnabled: true,
             cloudWatchMetricsEnabled: true,
-            metricName: "AWSManagedRuleLinux"
+            metricName: "AWSManagedRulesLinux"
           },
         },
       },
