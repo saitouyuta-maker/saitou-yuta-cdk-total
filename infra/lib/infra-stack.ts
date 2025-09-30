@@ -360,7 +360,7 @@ export class InfraStack extends cdk.Stack {
           statement: {
             managedRuleGroupStatement: {
               vendorName: "AWS",
-              name: "AWS-AWSManagedRulesAmazonIpReputationList",
+              name: "AWSManagedRulesAmazonIpReputationList",
             },
           },
           overrideAction: {
