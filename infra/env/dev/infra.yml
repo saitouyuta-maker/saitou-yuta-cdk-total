@@ -31,7 +31,7 @@ secretsManager:
 rds: 
     dbCluster: 
         constructId: RdsMySQLInstance
-        dbName: saitou-yuta-cdk_dev
+        dbName: saitou_yuta_cdk_dev
         masterUsername: root
         backupRetention: 7
         backupPreferredWindow: "17:00-18:00"
