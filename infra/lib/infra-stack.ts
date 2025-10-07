@@ -696,7 +696,7 @@ export class InfraStack extends cdk.Stack {
       },
       securityGroups: [privateSg],
       // desiredCount: props.mode === "prod" ? 2 : 1,
-      desiredCount: 1,
+      desiredCount: 0,
       assignPublicIp: false,
       capacityProviderStrategies: [
         {
