@@ -566,14 +566,7 @@ export class InfraStack extends cdk.Stack {
         command: [
           "python3",
           "-c",
-          `
-        import requests
-        print("Start JSONPlaceholder test")
-        response = requests.get("https://jsonplaceholder.typicode.com/todos/1")
-        print(response.json())
-        while True:
-          pass
-        `
+          "import requests; print('Start JSONPlaceholder test'); r=requests.get('https://jsonplaceholder.typicode.com/todos/1'); print(r.json()); import time; time.sleep(3600)"
         ],
       }
     );
