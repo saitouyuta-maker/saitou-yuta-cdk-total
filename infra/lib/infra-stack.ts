@@ -632,7 +632,7 @@ export class InfraStack extends cdk.Stack {
         DB_READ_USER: ecs.Secret.fromSecretsManager(dbSecret,"username"),
         DB_READ_PASSWORD: ecs.Secret.fromSecretsManager(dbSecret,"password"),
         AWS_ACCESS_KEY_ID: ecs.Secret.fromSecretsManager(awsAccessSecret,"awsAccessKeyId"),
-        AWS_SECRET_ACCESS_KEY: ecs.Secret.fromSecretsManager(awsAccessSecret,"awsAccessKeyKey"),
+        AWS_SECRET_ACCESS_KEY: ecs.Secret.fromSecretsManager(awsAccessSecret,"awsAccessKey"),
         AZURE_OPENAI_ENDPOINT: ecs.Secret.fromSecretsManager(azureOpenAISecret,"azureOpenAIEndpoint"),
         AZURE_OPENAI_KEY: ecs.Secret.fromSecretsManager(azureOpenAISecret,"azureOpenAIKey"),
       },
