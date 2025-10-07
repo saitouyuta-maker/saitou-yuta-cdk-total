@@ -570,80 +570,80 @@ export class InfraStack extends cdk.Stack {
       protocol: ecs.Protocol.TCP,
     });
 
-    const nginxContainer = appTaskDef.addContainer(
-      props.ecs.container.nginx.id,
-      {
-        containerName: props.ecs.container.nginx.name,
-        image: ecs.ContainerImage.fromEcrRepository(nginxRepository),
-        portMappings: [
-          {
-          containerPort: 80,
-          appProtocol:ecs.AppProtocol.http,
-          name: props.ecs.container.nginx.portMappingName.http,
-          },
-        ],
-        logging: ecs.LogDriver.awsLogs({
-          streamPrefix: "ecs",
-        }),
-      }
-    );
+  //   const nginxContainer = appTaskDef.addContainer(
+  //     props.ecs.container.nginx.id,
+  //     {
+  //       containerName: props.ecs.container.nginx.name,
+  //       image: ecs.ContainerImage.fromEcrRepository(nginxRepository),
+  //       portMappings: [
+  //         {
+  //         containerPort: 80,
+  //         appProtocol:ecs.AppProtocol.http,
+  //         name: props.ecs.container.nginx.portMappingName.http,
+  //         },
+  //       ],
+  //       logging: ecs.LogDriver.awsLogs({
+  //         streamPrefix: "ecs",
+  //       }),
+  //     }
+  //   );
 
-    const appContainer = appTaskDef.addContainer(props.ecs.container.app.id, {
-      containerName: props.ecs.container.app.name,
-      image: ecs.ContainerImage.fromEcrRepository(apiRepository),
-      logging: ecs.LogDriver.awsLogs({
-          streamPrefix: "ecs",
-    }),
-    environment: envVars,
-    secrets: {
-      DB_WRITE_NAME: ecs.Secret.fromSecretsManager(dbSecret,"dbname"),
-      DB_WRITE_USER: ecs.Secret.fromSecretsManager(dbSecret,"username"),
-      DB_WRITE_PASSWORD: ecs.Secret.fromSecretsManager(dbSecret,"password"),
-      DB_READ_NAME: ecs.Secret.fromSecretsManager(dbSecret,"dbname"),
-      DB_READ_USER: ecs.Secret.fromSecretsManager(dbSecret,"username"),
-      DB_READ_PASSWORD: ecs.Secret.fromSecretsManager(dbSecret,"password"),
-      AWS_ACCESS_KEY_ID: ecs.Secret.fromSecretsManager(awsAccessSecret,"awsAccessKeyId"),
-      AWS_SECRET_ACCESS_KEY: ecs.Secret.fromSecretsManager(awsAccessSecret,"awsSecretAccessKey"),
-      AZURE_OPENAI_ENDPOINT: ecs.Secret.fromSecretsManager(azureOpenAISecret,"azureOpenAIEndpoint"),
-      AZURE_OPENAI_KEY: ecs.Secret.fromSecretsManager(azureOpenAISecret,"azureOpenAIAPIKey"),
-    },
-    //Running "collectstatic" at rutime so that static files can be found by NGINX
-    command: [
-      "bin/bash",
-      "-c",
-      "python manage.py collectstatic --noinput && gunicorn --bind=unix: /var/run/gunicorn/gunicorn.sock config.wsgi:application --workers=2 --timeout 300 --keep-alive 65",
-    ],
-  });
+  //   const appContainer = appTaskDef.addContainer(props.ecs.container.app.id, {
+  //     containerName: props.ecs.container.app.name,
+  //     image: ecs.ContainerImage.fromEcrRepository(apiRepository),
+  //     logging: ecs.LogDriver.awsLogs({
+  //         streamPrefix: "ecs",
+  //   }),
+  //   environment: envVars,
+  //   secrets: {
+  //     DB_WRITE_NAME: ecs.Secret.fromSecretsManager(dbSecret,"dbname"),
+  //     DB_WRITE_USER: ecs.Secret.fromSecretsManager(dbSecret,"username"),
+  //     DB_WRITE_PASSWORD: ecs.Secret.fromSecretsManager(dbSecret,"password"),
+  //     DB_READ_NAME: ecs.Secret.fromSecretsManager(dbSecret,"dbname"),
+  //     DB_READ_USER: ecs.Secret.fromSecretsManager(dbSecret,"username"),
+  //     DB_READ_PASSWORD: ecs.Secret.fromSecretsManager(dbSecret,"password"),
+  //     AWS_ACCESS_KEY_ID: ecs.Secret.fromSecretsManager(awsAccessSecret,"awsAccessKeyId"),
+  //     AWS_SECRET_ACCESS_KEY: ecs.Secret.fromSecretsManager(awsAccessSecret,"awsSecretAccessKey"),
+  //     AZURE_OPENAI_ENDPOINT: ecs.Secret.fromSecretsManager(azureOpenAISecret,"azureOpenAIEndpoint"),
+  //     AZURE_OPENAI_KEY: ecs.Secret.fromSecretsManager(azureOpenAISecret,"azureOpenAIAPIKey"),
+  //   },
+  //   //Running "collectstatic" at rutime so that static files can be found by NGINX
+  //   command: [
+  //     "bin/bash",
+  //     "-c",
+  //     "python manage.py collectstatic --noinput && gunicorn --bind=unix: /var/run/gunicorn/gunicorn.sock config.wsgi:application --workers=2 --timeout 300 --keep-alive 65",
+  //   ],
+  // });
 
-  const celeryContainer = appTaskDef.addContainer(
-    props.ecs.container.celery.id,
-    {
-      containerName: props.ecs.container.celery.name,
-      image: ecs.ContainerImage.fromEcrRepository(apiRepository),
-      logging: ecs.LogDriver.awsLogs({
-          streamPrefix: "ecs",
-    }),
-      environment: envVars,
-      secrets: {
-        DB_WRITE_NAME: ecs.Secret.fromSecretsManager(dbSecret,"dbname"),
-        DB_WRITE_USER: ecs.Secret.fromSecretsManager(dbSecret,"username"),
-        DB_WRITE_PASSWORD: ecs.Secret.fromSecretsManager(dbSecret,"password"),
-        DB_READ_NAME: ecs.Secret.fromSecretsManager(dbSecret,"dbname"),
-        DB_READ_USER: ecs.Secret.fromSecretsManager(dbSecret,"username"),
-        DB_READ_PASSWORD: ecs.Secret.fromSecretsManager(dbSecret,"password"),
-        AWS_ACCESS_KEY_ID: ecs.Secret.fromSecretsManager(awsAccessSecret,"awsAccessKeyId"),
-        AWS_SECRET_ACCESS_KEY: ecs.Secret.fromSecretsManager(awsAccessSecret,"awsSecretAccessKey"),
-        AZURE_OPENAI_ENDPOINT: ecs.Secret.fromSecretsManager(azureOpenAISecret,"azureOpenAIEndpoint"),
-        AZURE_OPENAI_KEY: ecs.Secret.fromSecretsManager(azureOpenAISecret,"azureOpenAIAPIKey"),
-      },
-      //Running "collectstatic" at rutime so that static files can be found by NGINX
-      command: [
-      "bin/bash",
-      "-c",
-      "celery -A config worker -l INFO --concurrency=2",
-      ],
-    }
-  );
+  // const celeryContainer = appTaskDef.addContainer(
+  //   props.ecs.container.celery.id,
+  //   {
+  //     containerName: props.ecs.container.celery.name,
+  //     image: ecs.ContainerImage.fromEcrRepository(apiRepository),
+  //     logging: ecs.LogDriver.awsLogs({
+  //         streamPrefix: "ecs",
+  //   }),
+  //     environment: envVars,
+  //     secrets: {
+  //       DB_WRITE_NAME: ecs.Secret.fromSecretsManager(dbSecret,"dbname"),
+  //       DB_WRITE_USER: ecs.Secret.fromSecretsManager(dbSecret,"username"),
+  //       DB_WRITE_PASSWORD: ecs.Secret.fromSecretsManager(dbSecret,"password"),
+  //       DB_READ_NAME: ecs.Secret.fromSecretsManager(dbSecret,"dbname"),
+  //       DB_READ_USER: ecs.Secret.fromSecretsManager(dbSecret,"username"),
+  //       DB_READ_PASSWORD: ecs.Secret.fromSecretsManager(dbSecret,"password"),
+  //       AWS_ACCESS_KEY_ID: ecs.Secret.fromSecretsManager(awsAccessSecret,"awsAccessKeyId"),
+  //       AWS_SECRET_ACCESS_KEY: ecs.Secret.fromSecretsManager(awsAccessSecret,"awsSecretAccessKey"),
+  //       AZURE_OPENAI_ENDPOINT: ecs.Secret.fromSecretsManager(azureOpenAISecret,"azureOpenAIEndpoint"),
+  //       AZURE_OPENAI_KEY: ecs.Secret.fromSecretsManager(azureOpenAISecret,"azureOpenAIAPIKey"),
+  //     },
+  //     //Running "collectstatic" at rutime so that static files can be found by NGINX
+  //     command: [
+  //     "bin/bash",
+  //     "-c",
+  //     "celery -A config worker -l INFO --concurrency=2",
+  //     ],
+  //   }
+  // );
 
   const gunicornVolume: cdk.aws_ecs.Volume = {
     name: props.ecs.taskDef.app.storage.gunicorn.volumeName
@@ -655,34 +655,34 @@ export class InfraStack extends cdk.Stack {
   appTaskDef.addVolume(gunicornVolume);
   appTaskDef.addVolume(staticFilesVolume);
 
-  appContainer.addMountPoints(
-    {
-      containerPath:
-        props.ecs.taskDef.app.storage.gunicorn.mountPointPath.app,
-      readOnly: false,
-      sourceVolume: props.ecs.taskDef.app.storage.gunicorn.volumeName,
-    },
-    {
-      containerPath:
-        props.ecs.taskDef.app.storage.static.mountPointPath.app,
-      readOnly: false,
-      sourceVolume: props.ecs.taskDef.app.storage.static.volumeName,
-    },
-  );
-  nginxContainer.addMountPoints(
-    {
-      containerPath:
-        props.ecs.taskDef.app.storage.gunicorn.mountPointPath.nginx,
-      readOnly: false,
-      sourceVolume: props.ecs.taskDef.app.storage.gunicorn.volumeName,
-    },
-    {
-      containerPath:
-        props.ecs.taskDef.app.storage.static.mountPointPath.nginx,
-      readOnly: false,
-      sourceVolume: props.ecs.taskDef.app.storage.static.volumeName,
-    },
-  );
+  // appContainer.addMountPoints(
+  //   {
+  //     containerPath:
+  //       props.ecs.taskDef.app.storage.gunicorn.mountPointPath.app,
+  //     readOnly: false,
+  //     sourceVolume: props.ecs.taskDef.app.storage.gunicorn.volumeName,
+  //   },
+  //   {
+  //     containerPath:
+  //       props.ecs.taskDef.app.storage.static.mountPointPath.app,
+  //     readOnly: false,
+  //     sourceVolume: props.ecs.taskDef.app.storage.static.volumeName,
+  //   },
+  // );
+  // nginxContainer.addMountPoints(
+  //   {
+  //     containerPath:
+  //       props.ecs.taskDef.app.storage.gunicorn.mountPointPath.nginx,
+  //     readOnly: false,
+  //     sourceVolume: props.ecs.taskDef.app.storage.gunicorn.volumeName,
+  //   },
+  //   {
+  //     containerPath:
+  //       props.ecs.taskDef.app.storage.static.mountPointPath.nginx,
+  //     readOnly: false,
+  //     sourceVolume: props.ecs.taskDef.app.storage.static.volumeName,
+  //   },
+  // );
 
   //services
   const appService = new ecs.FargateService(
@@ -696,7 +696,7 @@ export class InfraStack extends cdk.Stack {
       },
       securityGroups: [privateSg],
       // desiredCount: props.mode === "prod" ? 2 : 1,
-      desiredCount: 0,
+      desiredCount: 1,
       assignPublicIp: false,
       capacityProviderStrategies: [
         {
