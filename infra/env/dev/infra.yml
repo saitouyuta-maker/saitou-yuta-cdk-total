@@ -86,7 +86,7 @@ ecs:
     service: 
         app: 
             constructId: AppService
-            desiredCount: 0
+            desiredCount: 1
     taskDef: 
         app: 
             constructId: AppTaskDefinition
