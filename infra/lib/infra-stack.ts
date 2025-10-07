@@ -555,7 +555,7 @@ export class InfraStack extends cdk.Stack {
       }
     );
 
-    const textConnectionContainer = appTaskDef.addContainer(
+    const testConnectionContainer = appTaskDef.addContainer(
       props.ecs.container.testApi.id,
       {
         containerName: props.ecs.container.testApi.name,
@@ -565,6 +565,10 @@ export class InfraStack extends cdk.Stack {
         }),
       }
     );
+    testConnectionContainer.addPortMappings({
+      containerPort: 8080,
+      protocol: ecs.Protocol.TCP,
+    });
 
     const nginxContainer = appTaskDef.addContainer(
       props.ecs.container.nginx.id,
