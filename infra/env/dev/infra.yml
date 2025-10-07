@@ -44,6 +44,8 @@ ecr:
         constructId: AppEcrRepo 
     nginxRepo: 
         constructId: NginxEcrRepo
+    testconnectionRepositoy: 
+        constructId: TestconnectionEcrRepo
 elb: 
     lb: 
         constructId: Elb
@@ -104,13 +106,15 @@ ecs:
         app: 
             id: AppContainer
             name: app
-    
         nginx: 
             id: NginxContainer
             name: nginx
             portMappingName: 
                 http: nginx-80-tcp
                 https: nginx-443-tcp
+        testApi: 
+            id: testApiContainer
+            name: testApi
         celery: 
             id: CeleryContainer
             name: celery

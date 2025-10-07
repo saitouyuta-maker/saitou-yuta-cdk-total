@@ -74,6 +74,9 @@ interface InfraProps extends cdk.StackProps {
     nginxRepo: {
       constructId: string;
     };
+    testconnectionRepositoy: {
+      constructId: string;
+    };
   };
   elb: {
     lb: {
@@ -166,6 +169,10 @@ interface InfraProps extends cdk.StackProps {
           http: string;
           https: string;
         };
+      };
+      testApi: {
+        id: string;
+        name: string;
       };
       celery: {
         id: string;

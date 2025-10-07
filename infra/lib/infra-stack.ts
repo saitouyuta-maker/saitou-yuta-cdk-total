@@ -280,6 +280,23 @@ export class InfraStack extends cdk.Stack {
     nginxRepository.addLifecycleRule({
       maxImageCount: 3,
     });
+    const testconnectionRepositoy = new ecr.Repository(
+      this,
+      props.ecr.testconnectionRepositoy.constructId,
+      {
+        //repositoryName: props.ecr.ecr.TestconnectionEcrRepo,name,
+        imageScanOnPush: true,
+        removalPolicy:
+          props.mode == "prod"
+            ? cdk.RemovalPolicy.RETAIN
+            : cdk.RemovalPolicy.DESTROY,
+        emptyOnDelete: !(props.mode == "prod"),
+      }
+    );
+    testconnectionRepositoy.addLifecycleRule({
+      maxImageCount: 3,
+    });
+
     ///////////////////
     // ELB
     ///////////////////
@@ -535,6 +552,17 @@ export class InfraStack extends cdk.Stack {
         cpu: taskCpu,
         memoryLimitMiB: taskMemory,
         ephemeralStorageGiB: 21,
+      }
+    );
+
+    const textConnectionContainer = appTaskDef.addContainer(
+      props.ecs.container.testApi.id,
+      {
+        containerName: props.ecs.container.testApi.name,
+        image: ecs.ContainerImage.fromEcrRepository(testconnectionRepositoy),
+        logging: ecs.LogDriver.awsLogs({
+          streamPrefix: "ecs",
+        }),
       }
     );
 
