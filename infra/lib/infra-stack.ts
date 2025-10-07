@@ -563,21 +563,10 @@ export class InfraStack extends cdk.Stack {
         logging: ecs.LogDriver.awsLogs({
           streamPrefix: "ecs",
         }),
-        command: [
-          "python3",
-          "-c",
-          `
-        import requests, time
-        print("Start JSONPlaceholder test")
-        r = requests.get("https://jsonplaceholder.typicode.com/todos/1")
-        print(r.json())
-        time.sleep(3600)
-        `,
-    ],
       }
     );
     testConnectionContainer.addPortMappings({
-      containerPort: 8080,
+      containerPort: 80,
       protocol: ecs.Protocol.TCP,
     });
 
