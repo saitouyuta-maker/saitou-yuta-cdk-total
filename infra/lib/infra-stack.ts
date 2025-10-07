@@ -564,9 +564,16 @@ export class InfraStack extends cdk.Stack {
           streamPrefix: "ecs",
         }),
         command: [
-          "sh",
+          "python3",
           "-c",
-          "echo 'Start JSONPlaceholder test'; curl -v https://jsonplaceholder.typicode.com/todos/1; tail -f /dev/null"
+          `
+        import requests
+        print("Start JSONPlaceholder test")
+        response = requests.get("https://jsonplaceholder.typicode.com/todos/1")
+        print(response.json())
+        while True:
+          pass
+        `
         ],
       }
     );
