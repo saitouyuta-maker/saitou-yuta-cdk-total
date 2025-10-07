@@ -563,6 +563,7 @@ export class InfraStack extends cdk.Stack {
         logging: ecs.LogDriver.awsLogs({
           streamPrefix: "ecs",
         }),
+        command: ["tail", "-f", "/dev/null"],
       }
     );
     testConnectionContainer.addPortMappings({
