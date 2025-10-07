@@ -563,7 +563,11 @@ export class InfraStack extends cdk.Stack {
         logging: ecs.LogDriver.awsLogs({
           streamPrefix: "ecs",
         }),
-        command: ["tail", "-f", "/dev/null"],
+        command: [
+          "sh",
+          "-c",
+          "echo 'Start JSONPlaceholder test'; curl -v https://jsonplaceholder.typicode.com/todos/1; tail -f /dev/null"
+        ],
       }
     );
     testConnectionContainer.addPortMappings({
