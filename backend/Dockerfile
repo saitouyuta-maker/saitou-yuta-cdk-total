@@ -10,6 +10,10 @@ RUN apt-get update && apt-get install -y \
 # Python requests のインストール
 RUN pip install --no-cache-dir requests
 
+# 作業ディレクトリ作成
+RUN mkdir -p /app
+WORKDIR /app
+
 # Nginx 設定ファイル
 RUN cat <<EOF > /etc/nginx/sites-available/default
 server {
