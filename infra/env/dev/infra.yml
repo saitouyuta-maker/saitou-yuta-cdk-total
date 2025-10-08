@@ -15,8 +15,8 @@ vpc:
             peerIpAddresses: 59.132.146.103/32
         isolated: 
             constructId: IsolatedSecurityGroup
-trangitGateway:
-    gataway:
+transitGateway:
+    gateaway:
         constructId: TransitGateway
         id: tgw-0b22f0da5c261d25b
 secretsManager: 
