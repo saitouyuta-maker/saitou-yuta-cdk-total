@@ -49,29 +49,29 @@ export class InfraStack extends cdk.Stack {
       ],
       natGateways: 0,
     });
-    ///////////////////
-    // Transit Gateway Attachment
-    ///////////////////
-    const privateSubnetIds = vpc.privateSubnets.map(subnet => subnet.subnetId);
+  //   ///////////////////
+  //   // Transit Gateway Attachment
+  //   ///////////////////
+  //   const privateSubnetIds = vpc.privateSubnets.map(subnet => subnet.subnetId);
 
-    // TGW Attachment (L1)
-    const tgwAttachment = new ec2.CfnTransitGatewayAttachment(
-      this,
-      props.transitGateway.gateway.constructId, // infra.yml で指定した constructId
-      {
-        transitGatewayId: props.transitGateway.gateway.id, // // ここにアカウントBのTGW
-        vpcId: vpc.vpcId,
-        subnetIds: privateSubnetIds,
-      }
-    );
+  //   // TGW Attachment (L1)
+  //   const tgwAttachment = new ec2.CfnTransitGatewayAttachment(
+  //     this,
+  //     props.transitGateway.gateway.constructId, // infra.yml で指定した constructId
+  //     {
+  //       transitGatewayId: props.transitGateway.gateway.id, // // ここにアカウントBのTGW
+  //       vpcId: vpc.vpcId,
+  //       subnetIds: privateSubnetIds,
+  //     }
+  //   );
 
-    vpc.privateSubnets.forEach((subnet, idx) => {
-      new ec2.CfnRoute(this, `PrivateSubnetRoute${idx}`, {
-        routeTableId: subnet.routeTable.routeTableId,
-        destinationCidrBlock: "0.0.0.0/0", // インターネットアクセス用
-        transitGatewayId: tgwAttachment.ref,
-      });
-  });
+  //   vpc.privateSubnets.forEach((subnet, idx) => {
+  //     new ec2.CfnRoute(this, `PrivateSubnetRoute${idx}`, {
+  //       routeTableId: subnet.routeTable.routeTableId,
+  //       destinationCidrBlock: "0.0.0.0/0", // インターネットアクセス用
+  //       transitGatewayId: tgwAttachment.ref,
+  //     });
+  // });
 
 
     const publicSg = new ec2.SecurityGroup(

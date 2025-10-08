@@ -24,12 +24,12 @@ interface InfraProps extends cdk.StackProps {
       };
     };
   };
-  transitGateway: {
-    gateway: {
-      constructId: string;
-      id: string;
-    }
-  };
+  // transitGateway: {
+  //   gateway: {
+  //     constructId: string;
+  //     id: string;
+  //   }
+  // };
   secretsManager: {
     dbSecret: {
       constructId: string;
