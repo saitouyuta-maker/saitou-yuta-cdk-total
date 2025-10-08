@@ -24,6 +24,12 @@ interface InfraProps extends cdk.StackProps {
       };
     };
   };
+  trangitGateway: {
+    gateway: {
+      constructId: string;
+      id: string;
+    }
+  };
   secretsManager: {
     dbSecret: {
       constructId: string;

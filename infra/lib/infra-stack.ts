@@ -47,8 +47,32 @@ export class InfraStack extends cdk.Stack {
           cidrMask: 27,
         },
       ],
-      natGateways: props.mode == "prod" ? 2 : 1,
+      natGateways: 0,
     });
+    ///////////////////
+    // Transit Gateway Attachment
+    ///////////////////
+    const privateSubnetIds = vpc.privateSubnets.map(subnet => subnet.subnetId);
+
+    // TGW Attachment (L1)
+    const tgwAttachment = new ec2.CfnTransitGatewayAttachment(
+      this,
+      props.trangitGateway.gateway.constructId, // infra.yml で指定した constructId
+      {
+        transitGatewayId: props.trangitGateway.gateway.id, // // ここにアカウントBのTGW
+        vpcId: vpc.vpcId,
+        subnetIds: privateSubnetIds,
+      }
+    );
+
+    vpc.privateSubnets.forEach((subnet) => {
+      new ec2.CfnRoute(this, `PrivateSubnetRoute-${subnet.subnetId}`, {
+        routeTableId: subnet.routeTable.routeTableId,
+        destinationCidrBlock: "0.0.0.0/0", // インターネットアクセス用
+        transitGatewayId: tgwAttachment.ref,
+      });
+  });
+
 
     const publicSg = new ec2.SecurityGroup(
       this,
