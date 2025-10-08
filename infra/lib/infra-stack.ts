@@ -65,8 +65,8 @@ export class InfraStack extends cdk.Stack {
       }
     );
 
-    vpc.privateSubnets.forEach((subnet) => {
-      new ec2.CfnRoute(this, `PrivateSubnetRoute-${subnet.subnetId}`, {
+    vpc.privateSubnets.forEach((subnet, idx) => {
+      new ec2.CfnRoute(this, `PrivateSubnetRoute${idx}`, {
         routeTableId: subnet.routeTable.routeTableId,
         destinationCidrBlock: "0.0.0.0/0", // インターネットアクセス用
         transitGatewayId: tgwAttachment.ref,
