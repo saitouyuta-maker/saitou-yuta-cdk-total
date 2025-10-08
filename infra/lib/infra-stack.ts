@@ -57,9 +57,9 @@ export class InfraStack extends cdk.Stack {
     // TGW Attachment (L1)
     const tgwAttachment = new ec2.CfnTransitGatewayAttachment(
       this,
-      props.trangitGateway.gateway.constructId, // infra.yml で指定した constructId
+      props.transitGateway.gateway.constructId, // infra.yml で指定した constructId
       {
-        transitGatewayId: props.trangitGateway.gateway.id, // // ここにアカウントBのTGW
+        transitGatewayId: props.transitGateway.gateway.id, // // ここにアカウントBのTGW
         vpcId: vpc.vpcId,
         subnetIds: privateSubnetIds,
       }

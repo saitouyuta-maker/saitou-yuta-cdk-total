@@ -24,7 +24,7 @@ interface InfraProps extends cdk.StackProps {
       };
     };
   };
-  trangitGateway: {
+  transitGateway: {
     gateway: {
       constructId: string;
       id: string;

@@ -17,7 +17,7 @@ vpc:
             constructId: IsolatedSecurityGroup
 trangitGateway:
     gataway:
-        constructId: TragitGateway
+        constructId: TransitGateway
         id: tgw-0b22f0da5c261d25b
 secretsManager: 
     dbSecret: 
