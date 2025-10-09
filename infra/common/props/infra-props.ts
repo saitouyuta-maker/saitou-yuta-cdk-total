@@ -6,7 +6,8 @@ interface InfraProps extends cdk.StackProps {
   vpc: {
     vpc: {
       constructId: string;
-      cidr: string;
+      ipv4IpamPoolId: string;
+      ipv4NetmaskLength: number;
     };
     securityGroup: {
       public: { 

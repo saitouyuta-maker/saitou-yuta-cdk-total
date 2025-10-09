@@ -4,7 +4,8 @@ stackId: saitou-yuta-cdk-dev
 vpc: 
     vpc: 
         constructId: Vpc
-        cidr: 10.120.16.0/24
+        ipv4IpamPoolId: ipam-pool-06ec6a4d339922a72;
+        ipv4NetmaskLength: 24
     securityGroup: 
         public:  
             constructId: PublicSecurityGroup

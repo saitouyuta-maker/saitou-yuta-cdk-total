@@ -28,7 +28,6 @@ export class InfraStack extends cdk.Stack {
     ///////////////////
     const vpc = new ec2.Vpc(this, props.vpc.vpc.constructId, {
       //vpcName: props.vpc.vpc.name,
-      ipAddresses:ec2.IpAddresses.cidr(props.vpc.vpc.cidr),
       maxAzs: 2,
       subnetConfiguration: [
         {
@@ -48,6 +47,12 @@ export class InfraStack extends cdk.Stack {
         },
       ],
       natGateways: 0,
+      // ▼ IPAM から自動で CIDR を割り当てる設定 ▼
+      ipAddresses: ec2.IpAddresses.awsIpamAllocation({
+        ipv4IpamPoolId: props.vpc.vpc.ipv4IpamPoolId,  // ← IPAMプールIDを指定
+        ipv4NetmaskLength: props.vpc.vpc.ipv4NetmaskLength, // ← 割り当てたいCIDRサイズ
+        
+      }),
     });
   //   ///////////////////
   //   // Transit Gateway Attachment
