@@ -23,6 +23,9 @@ interface InfraProps extends cdk.StackProps {
       isolated: {
         constructId: string;
       };
+      ecsvpcendpoint: {
+        constructId: string;
+      };
     };
   };
   // transitGateway: {

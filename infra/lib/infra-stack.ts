@@ -51,9 +51,10 @@ export class InfraStack extends cdk.Stack {
       ipAddresses: ec2.IpAddresses.awsIpamAllocation({
         ipv4IpamPoolId: props.vpc.vpc.ipv4IpamPoolId,  // ← IPAMプールIDを指定
         ipv4NetmaskLength: props.vpc.vpc.ipv4NetmaskLength, // ← 割り当てたいCIDRサイズ
-        
+
       }),
     });
+    
   //   ///////////////////
   //   // Transit Gateway Attachment
   //   ///////////////////
@@ -166,9 +167,60 @@ export class InfraStack extends cdk.Stack {
       ec2.Port.tcp(6379),
       "allow traffic on port 6379 (Redis) from private security group"
     );
+
+    const ecsVpcEndpointSg = new ec2.SecurityGroup(
+      this,
+      props.vpc.securityGroup.ecsvpcendpoint.constructId,
+      {
+        vpc: vpc,
+        allowAllOutbound: true,
+        //securityGroupName: props,vpc.securityGroup.ecsvpcendpoint.name,
+        description: "Security group for VPCendpoint"
+      }
+    );
+
+
+
+    /////////////////////
+    // VPC ENDPOINTS
+    /////////////////////
+
+    // S3 Gateway Endpoint
+    vpc.addGatewayEndpoint("S3GatewayEndpoint", {
+      service: ec2.GatewayVpcEndpointAwsService.S3,
+      // Privateサブネット（または全サブネット）を関連付け
+      subnets: [{ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }],
+    });
+
+    // SQS Interface Endpoint
+    vpc.addInterfaceEndpoint("SqsInterfaceEndpoint", {
+      service: ec2.InterfaceVpcEndpointAwsService.SQS,
+      subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      privateDnsEnabled: true,
+      securityGroups: [ecsVpcEndpointSg],
+    });
+
+    // CloudWatch Logs Interface Endpoint
+    vpc.addInterfaceEndpoint("CloudWatchLogsEndpoint", {
+      service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
+      subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      privateDnsEnabled: true,
+      securityGroups: [ecsVpcEndpointSg],
+    });
+
+    // CloudWatch Monitoring (Metrics)
+    vpc.addInterfaceEndpoint("CloudWatchMonitoringEndpoint", {
+      service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_MONITORING,
+      subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      privateDnsEnabled: true,
+      securityGroups: [ecsVpcEndpointSg],
+    });
+
+
     ///////////////////
     // Secrets Manger
     ///////////////////
+    
     
     const dbSecret = new secretsmanager.Secret(
       this,

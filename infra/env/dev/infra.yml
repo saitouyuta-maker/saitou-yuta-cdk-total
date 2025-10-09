@@ -16,6 +16,8 @@ vpc:
             peerIpAddresses: 59.132.146.103/32
         isolated: 
             constructId: IsolatedSecurityGroup
+        ecsvpcendpoint: 
+            constructId: EcsvpcendpointSecurityGroup
 # transitGateway:
 #     gateway:
 #         constructId: TransitGateway
