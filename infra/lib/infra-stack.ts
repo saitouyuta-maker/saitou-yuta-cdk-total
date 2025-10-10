@@ -46,7 +46,7 @@ export class InfraStack extends cdk.Stack {
           cidrMask: 27,
         },
       ],
-      natGateways: 0,
+      natGateways: 1,
       // ▼ IPAM から自動で CIDR を割り当てる設定 ▼
       ipAddresses: ec2.IpAddresses.awsIpamAllocation({
         ipv4IpamPoolId: props.vpc.vpc.ipv4IpamPoolId,  // ← IPAMプールIDを指定
