@@ -185,45 +185,45 @@ export class InfraStack extends cdk.Stack {
     // VPC ENDPOINTS
     /////////////////////
 
-    // // S3 Gateway Endpoint
-    // const s3GatewayEndpoint = vpc.addGatewayEndpoint(
-    //   props.vpc.endpoints.endpoints3.constructId, // ← constructId を使用
-    //   {
-    //     service: ec2.GatewayVpcEndpointAwsService.S3,
-    //     subnets: [{ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }],
-    //   }
-    // );
-    // cdk.Tags.of(s3GatewayEndpoint).add("Name", props.vpc.endpoints.endpoints3.name);
+    // S3 Gateway Endpoint
+    const s3GatewayEndpoint = vpc.addGatewayEndpoint(
+      props.vpc.endpoints.endpoints3.constructId, // ← constructId を使用
+      {
+        service: ec2.GatewayVpcEndpointAwsService.S3,
+        subnets: [{ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }],
+      }
+    );
+    cdk.Tags.of(s3GatewayEndpoint).add("Name", props.vpc.endpoints.endpoints3.name);
 
-    // // SQS Interface Endpoint
-    // const sqsEndpoint = vpc.addInterfaceEndpoint("SqsEndpoint",
-    //   {
-    //     service: ec2.InterfaceVpcEndpointAwsService.SQS,
-    //     subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-    //     privateDnsEnabled: true,
-    //     securityGroups: [ecsVpcEndpointSg],
-    //   });
-    // cdk.Tags.of(sqsEndpoint).add("Name", props.vpc.endpoints.endpointsqs.name);
+    // SQS Interface Endpoint
+    const sqsEndpoint = vpc.addInterfaceEndpoint("SqsEndpoint",
+      {
+        service: ec2.InterfaceVpcEndpointAwsService.SQS,
+        subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+        privateDnsEnabled: true,
+        securityGroups: [ecsVpcEndpointSg],
+      });
+    cdk.Tags.of(sqsEndpoint).add("Name", props.vpc.endpoints.endpointsqs.name);
 
-    // // CloudWatch Logs Interface Endpoint
-    // const CloudWatchLogsEndpoint = vpc.addInterfaceEndpoint("CloudWatchLogsEndpoint",
-    //   {
-    //     service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
-    //     subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-    //     privateDnsEnabled: true,
-    //     securityGroups: [ecsVpcEndpointSg],
-    //   });
-    // cdk.Tags.of(CloudWatchLogsEndpoint).add("Name", props.vpc.endpoints.endpointcwlogs.name);
+    // CloudWatch Logs Interface Endpoint
+    const CloudWatchLogsEndpoint = vpc.addInterfaceEndpoint("CloudWatchLogsEndpoint",
+      {
+        service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
+        subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+        privateDnsEnabled: true,
+        securityGroups: [ecsVpcEndpointSg],
+      });
+    cdk.Tags.of(CloudWatchLogsEndpoint).add("Name", props.vpc.endpoints.endpointcwlogs.name);
 
-    // // CloudWatch Monitoring (Metrics)
-    // const CloudWatchmonitorEndpoint = vpc.addInterfaceEndpoint("CloudWatchmonitorEndpoint",
-    //   {
-    //     service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_MONITORING,
-    //     subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-    //     privateDnsEnabled: true,
-    //     securityGroups: [ecsVpcEndpointSg],
-    //   });
-    // cdk.Tags.of(CloudWatchmonitorEndpoint).add("Name", props.vpc.endpoints.endpointcwmonitor.name);
+    // CloudWatch Monitoring (Metrics)
+    const CloudWatchmonitorEndpoint = vpc.addInterfaceEndpoint("CloudWatchmonitorEndpoint",
+      {
+        service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_MONITORING,
+        subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+        privateDnsEnabled: true,
+        securityGroups: [ecsVpcEndpointSg],
+      });
+    cdk.Tags.of(CloudWatchmonitorEndpoint).add("Name", props.vpc.endpoints.endpointcwmonitor.name);
 
 
     ///////////////////
