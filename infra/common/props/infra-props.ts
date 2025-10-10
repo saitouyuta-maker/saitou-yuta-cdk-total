@@ -44,6 +44,14 @@ interface InfraProps extends cdk.StackProps {
         constructId: string;
         name: string;
       };
+      endpointecrapi: {
+        constructId: string;
+        name: string;
+      };
+      endpointecrdkr: {
+        constructId: string;
+        name: string;
+      };
     };
   };
   // transitGateway: {

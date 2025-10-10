@@ -224,6 +224,22 @@ export class InfraStack extends cdk.Stack {
         securityGroups: [ecsVpcEndpointSg],
       });
     cdk.Tags.of(CloudWatchmonitorEndpoint).add("Name", props.vpc.endpoints.endpointcwmonitor.name);
+    // Ecrapi endpoint
+    const EcrApiEndpoint = vpc.addInterfaceEndpoint('EcrApiEndpoint', 
+      {
+        service: ec2.InterfaceVpcEndpointAwsService.ECR,
+        subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+        securityGroups: [ecsVpcEndpointSg],
+      });
+    cdk.Tags.of(EcrApiEndpoint).add("Name", props.vpc.endpoints.endpointecrapi.name);
+    
+    // Ecrapi endpoint
+    const EcrDkrEndpoint = vpc.addInterfaceEndpoint('EcrDkrEndpoint', {
+        service: ec2.InterfaceVpcEndpointAwsService.ECR_DOCKER,
+        subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+        securityGroups: [ecsVpcEndpointSg],
+      });
+    cdk.Tags.of(EcrDkrEndpoint).add("Name", props.vpc.endpoints.endpointecrdkr.name);
 
 
     ///////////////////

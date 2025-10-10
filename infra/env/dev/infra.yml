@@ -31,6 +31,12 @@ vpc:
         endpointcwmonitor:
             constructId: S3GatewayEndpoint
             name: saitou-yuta-cwmonitor-endpoint
+        endpointecrapi:
+            constructId: S3GatewayEndpoint
+            name: saitou-yuta-ecrapi-endpoint
+        endpointecrdkr:
+            constructId: S3GatewayEndpoint
+            name: saitou-yuta-ecrdkr-endpoint
 # transitGateway:
 #     gateway:
 #         constructId: TransitGateway
