@@ -46,7 +46,7 @@ export class InfraStack extends cdk.Stack {
           cidrMask: 27,
         },
       ],
-      natGateways: 1,
+      natGateways: 0,
       // ▼ IPAM から自動で CIDR を割り当てる設定 ▼
       ipAddresses: ec2.IpAddresses.awsIpamAllocation({
         ipv4IpamPoolId: props.vpc.vpc.ipv4IpamPoolId,  // ← IPAMプールIDを指定
@@ -610,7 +610,24 @@ export class InfraStack extends cdk.Stack {
       }
     );
     
-
+    //S3 bucket for frontend hosting (private,accessd via CloudFront OAI)
+    const frontendBucket = new s3.Bucket(
+      this,
+      props.frontend.s3.constructId,
+      {
+        bucketName: props.frontend.s3.bucketName,
+        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+        encryption: s3.BucketEncryption.S3_MANAGED,
+        enforceSSL: true,
+        versioned: false,
+        removalPolicy:
+          props.mode == "prod"
+            ? cdk.RemovalPolicy.RETAIN
+            : cdk.RemovalPolicy.DESTROY,
+        autoDeleteObjects: !(props.mode == "prod"),
+      }
+    );
+    
     ///////////////////
     // ECS
     ///////////////////
@@ -645,7 +662,25 @@ export class InfraStack extends cdk.Stack {
       }
     );
 
-
+    const testConnectionContainer = appTaskDef.addContainer(
+      props.ecs.container.testApi.id,
+      {
+        containerName: props.ecs.container.testApi.name,
+        image: ecs.ContainerImage.fromEcrRepository(testconnectionRepositoy),
+        logging: ecs.LogDriver.awsLogs({
+          streamPrefix: "ecs",
+        }),
+        environment: {
+          FRONTEND_BUCKET: frontendBucket.bucketName,
+          SQS_QUEUE_URL: sqsQueue.queueUrl,
+          CLOUDWATCH_LOG_GROUP: '/ecs/testconnection',
+        },
+      }
+    );
+    testConnectionContainer.addPortMappings({
+      containerPort: 80,
+      protocol: ecs.Protocol.TCP,
+    });
 
   //   const nginxContainer = appTaskDef.addContainer(
   //     props.ecs.container.nginx.id,
@@ -804,23 +839,7 @@ export class InfraStack extends cdk.Stack {
   // Frontend: S3 + CloudFront (+ WAF)
   ///////////////////
 
-  //S3 bucket for frontend hosting (private,accessd via CloudFront OAI)
-  const frontendBucket = new s3.Bucket(
-    this,
-    props.frontend.s3.constructId,
-    {
-      bucketName: props.frontend.s3.bucketName,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      encryption: s3.BucketEncryption.S3_MANAGED,
-      enforceSSL: true,
-      versioned: false,
-      removalPolicy:
-        props.mode == "prod"
-        ? cdk.RemovalPolicy.RETAIN
-        : cdk.RemovalPolicy.DESTROY,
-      autoDeleteObjects: !(props.mode == "prod"),
-    }
-  );
+
 
   //CloudFront Origin Access Identity
   const frontendOai = new cloudfront.OriginAccessIdentity(
@@ -926,27 +945,6 @@ export class InfraStack extends cdk.Stack {
       // : {}),
     };
     frontendDistribution.addBehavior("/api/*", apiOrigin, apiBehabiorOptions);
-
-    
-    const testConnectionContainer = appTaskDef.addContainer(
-      props.ecs.container.testApi.id,
-      {
-        containerName: props.ecs.container.testApi.name,
-        image: ecs.ContainerImage.fromEcrRepository(testconnectionRepositoy),
-        logging: ecs.LogDriver.awsLogs({
-          streamPrefix: "ecs",
-        }),
-        environment: {
-          FRONTEND_BUCKET: frontendBucket.bucketName,
-          SQS_QUEUE_URL: sqsQueue.queueUrl,
-          CLOUDWATCH_LOG_GROUP: '/ecs/testconnection',
-        },
-      }
-    );
-    testConnectionContainer.addPortMappings({
-      containerPort: 80,
-      protocol: ecs.Protocol.TCP,
-    });
   }
 }
 //test
