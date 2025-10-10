@@ -187,7 +187,7 @@ export class InfraStack extends cdk.Stack {
 
     // S3 Gateway Endpoint
     const s3GatewayEndpoint = vpc.addGatewayEndpoint(
-      props.vpc.endpoints.s3.constructId, // ← constructId を使用
+      props.vpc.endpoints.endpoints3.constructId, // ← constructId を使用
       {
         service: ec2.GatewayVpcEndpointAwsService.S3,
         subnets: [{ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }],
