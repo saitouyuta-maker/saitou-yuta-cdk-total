@@ -46,7 +46,7 @@ export class InfraStack extends cdk.Stack {
           cidrMask: 27,
         },
       ],
-      natGateways: 0,
+      natGateways: 1,
       // ▼ IPAM から自動で CIDR を割り当てる設定 ▼
       ipAddresses: ec2.IpAddresses.awsIpamAllocation({
         ipv4IpamPoolId: props.vpc.vpc.ipv4IpamPoolId,  // ← IPAMプールIDを指定
@@ -645,20 +645,7 @@ export class InfraStack extends cdk.Stack {
       }
     );
 
-    const testConnectionContainer = appTaskDef.addContainer(
-      props.ecs.container.testApi.id,
-      {
-        containerName: props.ecs.container.testApi.name,
-        image: ecs.ContainerImage.fromEcrRepository(testconnectionRepositoy),
-        logging: ecs.LogDriver.awsLogs({
-          streamPrefix: "ecs",
-        }),
-      }
-    );
-    testConnectionContainer.addPortMappings({
-      containerPort: 80,
-      protocol: ecs.Protocol.TCP,
-    });
+
 
   //   const nginxContainer = appTaskDef.addContainer(
   //     props.ecs.container.nginx.id,
@@ -939,6 +926,27 @@ export class InfraStack extends cdk.Stack {
       // : {}),
     };
     frontendDistribution.addBehavior("/api/*", apiOrigin, apiBehabiorOptions);
+
+    
+    const testConnectionContainer = appTaskDef.addContainer(
+      props.ecs.container.testApi.id,
+      {
+        containerName: props.ecs.container.testApi.name,
+        image: ecs.ContainerImage.fromEcrRepository(testconnectionRepositoy),
+        logging: ecs.LogDriver.awsLogs({
+          streamPrefix: "ecs",
+        }),
+        environment: {
+          FRONTEND_BUCKET: frontendBucket.bucketName,
+          SQS_QUEUE_URL: sqsQueue.queueUrl,
+          CLOUDWATCH_LOG_GROUP: '/ecs/testconnection',
+        },
+      }
+    );
+    testConnectionContainer.addPortMappings({
+      containerPort: 80,
+      protocol: ecs.Protocol.TCP,
+    });
   }
 }
 //test
