@@ -30,19 +30,19 @@ interface InfraProps extends cdk.StackProps {
     endpoints: {
       endpoints3: {
         constructId: string;
-        username: string;
+        name: string;
       };
       endpointsqs: {
         constructId: string;
-        username: string;
+        name: string;
       };
       endpointcwlogs: {
         constructId: string;
-        username: string;
+        name: string;
       };
       endpointcwmonitor: {
         constructId: string;
-        username: string;
+        name: string;
       };
     };
   };
