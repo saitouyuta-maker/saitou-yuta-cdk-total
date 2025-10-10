@@ -27,24 +27,25 @@ interface InfraProps extends cdk.StackProps {
         constructId: string;
       };
     };
+    endpoints: {
+      endpoints3: {
+        constructId: string;
+        username: string;
+      };
+      endpointsqs: {
+        constructId: string;
+        username: string;
+      };
+      endpointcwlogs: {
+        constructId: string;
+        username: string;
+      };
+      endpointcwmonitor: {
+        constructId: string;
+        username: string;
+      };
+    };
   };
-  endpoints: {
-    endpoints3: {
-      constructId: string;
-      username: string;
-    };
-    endpointsqs: {
-      constructId: string;
-      username: string;
-    };
-    endpointcwlogs: {
-      constructId: string;
-      username: string;
-    };
-    endpointcwmonitor: {
-      constructId: string;
-      username: string;
-    };
   // transitGateway: {
   //   gateway: {
   //     constructId: string;
