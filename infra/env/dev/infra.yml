@@ -18,6 +18,19 @@ vpc:
             constructId: IsolatedSecurityGroup
         ecsvpcendpoint: 
             constructId: EcsvpcendpointSecurityGroup
+    endpoints:
+        endpoints3:
+            constructId: S3GatewayEndpoint
+            name: saitou-yuta-s3-endpoint
+        endpointsqs:
+            constructId: S3GatewayEndpoint
+            name: saitou-yuta-sqs-endpoint
+        endpointcwlogs:
+            constructId: S3GatewayEndpoint
+            name: saitou-yuta-cwlogs-endpoint
+        endpointcwmonitor:
+            constructId: S3GatewayEndpoint
+            name: saitou-yuta-cwmonitor-endpoint
 # transitGateway:
 #     gateway:
 #         constructId: TransitGateway
