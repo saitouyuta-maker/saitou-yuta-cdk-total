@@ -172,7 +172,7 @@ interface InfraProps extends cdk.StackProps {
         desiredCount: number;
       };
     };
-    taskrole: {
+    taskRole: {
       constructId: string;
       roleName: string;
     };
