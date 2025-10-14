@@ -27,6 +27,8 @@ export class InfraStack extends cdk.Stack {
     ///////////////////
     // VPC
     ///////////////////
+    const isProd = props.mode === "prod";
+
     const vpc = new ec2.Vpc(this, props.vpc.vpc.constructId, {
       //vpcName: props.vpc.vpc.name,
       maxAzs: 2,
@@ -48,11 +50,17 @@ export class InfraStack extends cdk.Stack {
         },
       ],
       natGateways: 1,
-      // ▼ IPAM から自動で CIDR を割り当てる設定 ▼
-      ipAddresses: ec2.IpAddresses.awsIpamAllocation({
-        ipv4IpamPoolId: props.vpc.vpc.ipv4IpamPoolId,  // ← IPAMプールIDを指定
-        ipv4NetmaskLength: props.vpc.vpc.ipv4NetmaskLength, // ← 割り当てたいCIDRサイズ
 
+      ...(isProd
+      ? {
+          // ▼ IPAM から自動で CIDR を割り当てる設定 ▼
+          ipAddresses: ec2.IpAddresses.awsIpamAllocation({
+          ipv4IpamPoolId: props.vpc.vpc.ipv4IpamPoolId,  // ← IPAMプールIDを指定
+          ipv4NetmaskLength: props.vpc.vpc.ipv4NetmaskLength, // ← 割り当てたいCIDRサイズ
+          }),
+        }
+      : {
+        ipAddresses: ec2.IpAddresses.cidr(props.vpc.vpc.cidr), // DEV は固定 CIDR
       }),
     });
     
@@ -169,84 +177,82 @@ export class InfraStack extends cdk.Stack {
       "allow traffic on port 6379 (Redis) from private security group"
     );
 
-    const ecsVpcEndpointSg = new ec2.SecurityGroup(
+    let ecsVpcEndpointSg: ec2.SecurityGroup | undefined;
+    
+    if (props.mode === "prod") {
+      ecsVpcEndpointSg = new ec2.SecurityGroup(
       this,
       props.vpc.securityGroup.ecsvpcendpoint.constructId,
-      {
-        vpc: vpc,
-        allowAllOutbound: true,
-        //securityGroupName: props,vpc.securityGroup.ecsvpcendpoint.name,
-        description: "Security group for VPCendpoint"
-      }
-    );
+        {
+          vpc: vpc,
+          allowAllOutbound: true,
+          description: "Security group for VPC endpoint",
+          // securityGroupName: props.vpc.securityGroup.ecsvpcendpoint.name,
+        }); 
+      /////////////////////
+      // VPC ENDPOINTS
+      /////////////////////
 
+      // S3 Gateway Endpoint
+      const s3GatewayEndpoint = vpc.addGatewayEndpoint(
+        props.vpc.endpoints.endpoints3.constructId, // ← constructId を使用
+        {
+          service: ec2.GatewayVpcEndpointAwsService.S3,
+          subnets: [{ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }],
+        }
+      );
+      cdk.Tags.of(s3GatewayEndpoint).add("Name", props.vpc.endpoints.endpoints3.name);
 
+      // SQS Interface Endpoint
+      const sqsEndpoint = vpc.addInterfaceEndpoint("SqsEndpoint",
+        {
+          service: ec2.InterfaceVpcEndpointAwsService.SQS,
+          subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+          privateDnsEnabled: true,
+          securityGroups: [ecsVpcEndpointSg],
+        });
+      cdk.Tags.of(sqsEndpoint).add("Name", props.vpc.endpoints.endpointsqs.name);
 
-    /////////////////////
-    // VPC ENDPOINTS
-    /////////////////////
+      // CloudWatch Logs Interface Endpoint
+      const CloudWatchLogsEndpoint = vpc.addInterfaceEndpoint("CloudWatchLogsEndpoint",
+        {
+          service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
+          subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+          privateDnsEnabled: true,
+          securityGroups: [ecsVpcEndpointSg],
+        });
+      cdk.Tags.of(CloudWatchLogsEndpoint).add("Name", props.vpc.endpoints.endpointcwlogs.name);
 
-    // S3 Gateway Endpoint
-    const s3GatewayEndpoint = vpc.addGatewayEndpoint(
-      props.vpc.endpoints.endpoints3.constructId, // ← constructId を使用
-      {
-        service: ec2.GatewayVpcEndpointAwsService.S3,
-        subnets: [{ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }],
-      }
-    );
-    cdk.Tags.of(s3GatewayEndpoint).add("Name", props.vpc.endpoints.endpoints3.name);
-
-    // SQS Interface Endpoint
-    const sqsEndpoint = vpc.addInterfaceEndpoint("SqsEndpoint",
-      {
-        service: ec2.InterfaceVpcEndpointAwsService.SQS,
-        subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-        privateDnsEnabled: true,
-        securityGroups: [ecsVpcEndpointSg],
-      });
-    cdk.Tags.of(sqsEndpoint).add("Name", props.vpc.endpoints.endpointsqs.name);
-
-    // CloudWatch Logs Interface Endpoint
-    const CloudWatchLogsEndpoint = vpc.addInterfaceEndpoint("CloudWatchLogsEndpoint",
-      {
-        service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
-        subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-        privateDnsEnabled: true,
-        securityGroups: [ecsVpcEndpointSg],
-      });
-    cdk.Tags.of(CloudWatchLogsEndpoint).add("Name", props.vpc.endpoints.endpointcwlogs.name);
-
-    // CloudWatch Monitoring (Metrics)
-    const CloudWatchmonitorEndpoint = vpc.addInterfaceEndpoint("CloudWatchmonitorEndpoint",
-      {
-        service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_MONITORING,
-        subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-        privateDnsEnabled: true,
-        securityGroups: [ecsVpcEndpointSg],
-      });
-    cdk.Tags.of(CloudWatchmonitorEndpoint).add("Name", props.vpc.endpoints.endpointcwmonitor.name);
-    // Ecrapi endpoint
-    const EcrApiEndpoint = vpc.addInterfaceEndpoint('EcrApiEndpoint', 
-      {
-        service: ec2.InterfaceVpcEndpointAwsService.ECR,
-        subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-        securityGroups: [ecsVpcEndpointSg],
-      });
-    cdk.Tags.of(EcrApiEndpoint).add("Name", props.vpc.endpoints.endpointecrapi.name);
+      // CloudWatch Monitoring (Metrics)
+      const CloudWatchmonitorEndpoint = vpc.addInterfaceEndpoint("CloudWatchmonitorEndpoint",
+        {
+          service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_MONITORING,
+          subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+          privateDnsEnabled: true,
+          securityGroups: [ecsVpcEndpointSg],
+        });
+      cdk.Tags.of(CloudWatchmonitorEndpoint).add("Name", props.vpc.endpoints.endpointcwmonitor.name);
+      // Ecrapi endpoint
+      const EcrApiEndpoint = vpc.addInterfaceEndpoint('EcrApiEndpoint', 
+        {
+          service: ec2.InterfaceVpcEndpointAwsService.ECR,
+          subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+          securityGroups: [ecsVpcEndpointSg],
+        });
+      cdk.Tags.of(EcrApiEndpoint).add("Name", props.vpc.endpoints.endpointecrapi.name);
     
-    // Ecrapi endpoint
-    const EcrDkrEndpoint = vpc.addInterfaceEndpoint('EcrDkrEndpoint', {
+      // Ecrapi endpoint
+      const EcrDkrEndpoint = vpc.addInterfaceEndpoint('EcrDkrEndpoint', {
         service: ec2.InterfaceVpcEndpointAwsService.ECR_DOCKER,
         subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
         securityGroups: [ecsVpcEndpointSg],
       });
-    cdk.Tags.of(EcrDkrEndpoint).add("Name", props.vpc.endpoints.endpointecrdkr.name);
-
+      cdk.Tags.of(EcrDkrEndpoint).add("Name", props.vpc.endpoints.endpointecrdkr.name);
+    }
 
     ///////////////////
     // Secrets Manger
     ///////////////////
-    
     
     const dbSecret = new secretsmanager.Secret(
       this,
@@ -349,6 +355,13 @@ export class InfraStack extends cdk.Stack {
       AWS_SQS_URL: sqsQueue.queueUrl,
       REDIS_DB: "0",
       ENVIRONMENT: props.mode,
+      ...(props.mode === "prod"
+      ? {
+          HTTP_PROXY: props.ecs.proxyEnv.httpProxy,
+          HTTPS_PROXY: props.ecs.proxyEnv.httpsProxy,
+          NO_PROXY: props.ecs.proxyEnv.noProxy,
+        }
+      : {}),
     };
     ///////////////////
     // ECS
@@ -650,18 +663,20 @@ export class InfraStack extends cdk.Stack {
     ///////////////////
 
     // タスク用 IAM ロール作成　// 追加コード
-    const appTaskRole = new iam.Role(
-      this,
-      props.ecs.taskRole.constructId,
-        {
-          assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
-          description: "Task role for ECS container to access AWS services",
-          roleName: props.ecs.taskRole.roleName,
-        });
+    let appTaskRole: iam.Role | undefined;
 
-      // SQS用権限追加　// 追加コード
+    if (props.mode === "prod") {
+      // ECS タスクロールを作成
+      appTaskRole = new iam.Role(this, props.ecs.taskRole.constructId, {
+        assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
+        description: "Task role for ECS container to access AWS services",
+        roleName: props.ecs.taskRole.roleName,
+      });
+
+      // SQS用権限追加
       sqsQueue.grantSendMessages(appTaskRole);      // 書き込み
       sqsQueue.grantConsumeMessages(appTaskRole);   // 読み取り
+    }   // 読み取り
 
     // Cluster and Task definitions
     const cluster = new ecs.Cluster(
@@ -690,15 +705,12 @@ export class InfraStack extends cdk.Stack {
         cpu: taskCpu,
         memoryLimitMiB: taskMemory,
         ephemeralStorageGiB: 21,
-        taskRole: appTaskRole, // 追加コード
-      }
-    );
-
-    const proxyEnv = {
-      HTTP_PROXY: props.ecs.proxyEnv.httpProxy,
-      HTTPS_PROXY: props.ecs.proxyEnv.httpsProxy,
-      NO_PROXY: props.ecs.proxyEnv.noProxy,
-    };
+        // prod のみ taskRole を設定
+        ...(props.mode === "prod" && appTaskRole
+          ? { taskRole: appTaskRole }
+          : {}),
+        }
+      );
 
     const testConnectionContainer = appTaskDef.addContainer(
       props.ecs.container.testApi.id,
@@ -708,12 +720,7 @@ export class InfraStack extends cdk.Stack {
         logging: ecs.LogDriver.awsLogs({
           streamPrefix: "ecs",
         }),
-        environment: {
-          ...proxyEnv, //追加コード
-          FRONTEND_BUCKET: frontendBucket.bucketName,
-          SQS_QUEUE_URL: sqsQueue.queueUrl,
-          CLOUDWATCH_LOG_GROUP: '/ecs/testconnection',
-        },
+        environment: envVars,
       }
     );
     testConnectionContainer.addPortMappings({

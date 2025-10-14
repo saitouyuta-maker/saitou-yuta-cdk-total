@@ -21,8 +21,17 @@ const ipv4CidrRegex =
     return ipv4CidrRegex.test(cidr);
   }
 
+export function validateIpv4ListByEnv(
+  cidrList: string[] | undefined,
+  mode: "dev" | "staging" | "prod"
+): string[] {
+  if (!cidrList) return [];
 
-export function vaidateIpv4List(cidrList:string[]): string[] {
+  if (mode === "prod") {
+    // prod の場合はチェックせず、空配列を返す
+    return [];
+  }
+  // dev / staging の場合は無効な CIDR を返す
   return cidrList.filter((cidr) => !isValidIpv4Cidr(cidr));
 }
 
