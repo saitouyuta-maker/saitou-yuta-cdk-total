@@ -678,6 +678,12 @@ export class InfraStack extends cdk.Stack {
       }
     );
 
+    const proxyEnv = {
+      HTTP_PROXY: props.ecs.proxyEnv.httpProxy,
+      HTTPS_PROXY: props.ecs.proxyEnv.httpsProxy,
+      NO_PROXY: props.ecs.proxyEnv.noProxy,
+    };
+
     const testConnectionContainer = appTaskDef.addContainer(
       props.ecs.container.testApi.id,
       {
@@ -687,6 +693,7 @@ export class InfraStack extends cdk.Stack {
           streamPrefix: "ecs",
         }),
         environment: {
+          ...proxyEnv, //追加コード
           FRONTEND_BUCKET: frontendBucket.bucketName,
           SQS_QUEUE_URL: sqsQueue.queueUrl,
           CLOUDWATCH_LOG_GROUP: '/ecs/testconnection',

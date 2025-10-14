@@ -128,6 +128,10 @@ ecs:
                     mountPointPath:
                         app: /var/run/staticfiles
                         nginx: /var/www/app/static
+    proxyEnv:   # ← 追加コード
+        httpProxy: "http://172.16.1.10:3128"
+        httpsProxy: "http://172.16.1.10:3128"
+        noProxy: "169.254.169.254,localhost,127.0.0.1,amazonaws.com"
     container: 
         app: 
             id: AppContainer

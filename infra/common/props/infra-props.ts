@@ -193,6 +193,11 @@ interface InfraProps extends cdk.StackProps {
         };
       };
     };
+    proxyEnv: {
+      httpProxy: string;
+      httpsProxy: string;
+      noProxy: string;
+    }
     container: {
       app: {
         id: string;
