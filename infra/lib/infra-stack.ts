@@ -11,6 +11,7 @@ import * as wafv2 from "aws-cdk-lib/aws-wafv2";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
+import * as iam from "aws-cdk-lib/aws-iam"; //追加コード
 import { Construct } from "constructs";
 import InfraProps from "../common/props/infra-props";
 import { Application } from "aws-cdk-lib/aws-appconfig";
@@ -648,6 +649,20 @@ export class InfraStack extends cdk.Stack {
     // ECS
     ///////////////////
 
+    // タスク用 IAM ロール作成　// 追加コード
+    const appTaskRole = new iam.Role(
+      this,
+      props.ecs.taskRole.constructId,
+        {
+          assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
+          description: "Task role for ECS container to access AWS services",
+          roleName: props.ecs.taskRole.roleName,
+        });
+
+      // SQS用権限追加　// 追加コード
+      sqsQueue.grantSendMessages(appTaskRole);      // 書き込み
+      sqsQueue.grantConsumeMessages(appTaskRole);   // 読み取り
+
     // Cluster and Task definitions
     const cluster = new ecs.Cluster(
       this,
@@ -675,6 +690,7 @@ export class InfraStack extends cdk.Stack {
         cpu: taskCpu,
         memoryLimitMiB: taskMemory,
         ephemeralStorageGiB: 21,
+        taskRole: appTaskRole, // 追加コード
       }
     );
 

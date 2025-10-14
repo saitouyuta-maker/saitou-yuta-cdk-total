@@ -113,6 +113,9 @@ ecs:
         app: 
             constructId: AppService
             desiredCount: 1
+    taskRole:
+        constructId: ContainerTaskRole
+        roleName: saitou-yuta-ecs-app-task-role
     taskDef: 
         app: 
             constructId: AppTaskDefinition
