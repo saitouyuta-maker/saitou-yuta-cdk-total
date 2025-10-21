@@ -1030,5 +1030,4 @@ export class InfraStack extends cdk.Stack {
     frontendDistribution.addBehavior("/api/*", apiOrigin, apiBehabiorOptions);
   }
 }
-}
 //test
