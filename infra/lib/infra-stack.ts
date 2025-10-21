@@ -23,7 +23,55 @@ export class InfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: InfraProps) {
     super(scope, id, props);
 
-  
+    const isProd = props.mode === "prod";
+    let ipamPool: ec2.CfnIPAMPool | undefined; // ← if文の外で宣言
+
+    if (isProd) {
+     ///////////////////
+     // IPAM
+     ///////////////////
+    const ipam = new ec2.CfnIPAM(this, props.ipam.ipam.constructId, {
+      description: "IPAM for Prod VPC management",
+      operatingRegions: [
+        {
+          regionName: cdk.Stack.of(this).region,
+        },
+      ],
+      tags: [
+        {
+          key: "Name",
+          value: props.ipam.ipam.name,
+        },
+      ],
+    });
+
+    ///////////////////
+    // IPAM POOL
+    ///////////////////
+    const ipamPool = new ec2.CfnIPAMPool(this, props.ipam.ipampool.constructId, {
+      addressFamily: "ipv4",
+      ipamScopeId: ipam.attrPrivateDefaultScopeId,
+      locale: cdk.Stack.of(this).region,
+      description: "Production IPAM pool",
+      allocationDefaultNetmaskLength: props.ipam.ipampool.netmask,
+      tags: [
+        {
+          key: "Name",
+           value: props.ipam.ipampool.name,
+        },
+      ],
+    });
+    ipamPool.addDependency(ipam);
+
+    ///////////////////
+    // IPAM POOL CIDR 割り当て
+    ///////////////////
+    const ipamPoolCidr = new ec2.CfnIPAMPoolCidr(this, props.ipam.ipampoolcidr.constructId, {
+      ipamPoolId: ipamPool.ref,
+      cidr: props.ipam.ipampoolcidr.cidr,
+    });
+    ipamPoolCidr.addDependency(ipamPool);
+    
     ///////////////////
     // VPC
     ///////////////////
@@ -50,27 +98,26 @@ export class InfraStack extends cdk.Stack {
       natGateways: 1,
       // ▼ IPAM から自動で CIDR を割り当てる設定 ▼
       ipAddresses: ec2.IpAddresses.awsIpamAllocation({
-        ipv4IpamPoolId: props.vpc.vpc.ipv4IpamPoolId,  // ← IPAMプールIDを指定
+        ipv4IpamPoolId: ipamPool!.ref,   // ← IPAMプールIDを指定
         ipv4NetmaskLength: props.vpc.vpc.ipv4NetmaskLength, // ← 割り当てたいCIDRサイズ
-
       }),
     });
     
-  //   ///////////////////
-  //   // Transit Gateway Attachment
-  //   ///////////////////
-  //   const privateSubnetIds = vpc.privateSubnets.map(subnet => subnet.subnetId);
+    ///////////////////
+    // Transit Gateway Attachment
+    ///////////////////
+    const privateSubnetIds = vpc.privateSubnets.map(subnet => subnet.subnetId);
 
-  //   // TGW Attachment (L1)
-  //   const tgwAttachment = new ec2.CfnTransitGatewayAttachment(
-  //     this,
-  //     props.transitGateway.gateway.constructId, // infra.yml で指定した constructId
-  //     {
-  //       transitGatewayId: props.transitGateway.gateway.id, // // ここにアカウントBのTGW
-  //       vpcId: vpc.vpcId,
-  //       subnetIds: privateSubnetIds,
-  //     }
-  //   );
+    // TGW Attachment (L1)
+    const tgwAttachment = new ec2.CfnTransitGatewayAttachment(
+      this,
+      props.transitGateway.gateway.constructId, // infra.yml で指定した constructId
+      {
+        transitGatewayId: props.transitGateway.gateway.id, // // ここにアカウントBのTGW
+        vpcId: vpc.vpcId,
+        subnetIds: privateSubnetIds,
+      }
+    );
 
   //   vpc.privateSubnets.forEach((subnet, idx) => {
   //     new ec2.CfnRoute(this, `PrivateSubnetRoute${idx}`, {
@@ -985,5 +1032,6 @@ export class InfraStack extends cdk.Stack {
     };
     frontendDistribution.addBehavior("/api/*", apiOrigin, apiBehabiorOptions);
   }
+}
 }
 //test

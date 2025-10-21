@@ -3,6 +3,22 @@ import * as cdk from 'aws-cdk-lib';
 interface InfraProps extends cdk.StackProps {
   mode: "dev" | "staging" | "prod";
   fileWebAclArn: string;
+  ipam: {
+    ipam: {
+      constructId: string;
+      name: string;
+    };
+    ipampool: {
+      constructId: string;
+      netmask: number;
+      name: string;
+    };
+    ipampoolcidr: {
+      constructId: string;
+      cidr: string;
+      name: string;
+    };
+  };
   vpc: {
     vpc: {
       constructId: string;
@@ -54,12 +70,12 @@ interface InfraProps extends cdk.StackProps {
       };
     };
   };
-  // transitGateway: {
-  //   gateway: {
-  //     constructId: string;
-  //     id: string;
-  //   }
-  // };
+  transitGateway: {
+    gateway: {
+      constructId: string;
+      id: string;
+    }
+  };
   secretsManager: {
     dbSecret: {
       constructId: string;

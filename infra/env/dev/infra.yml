@@ -1,6 +1,18 @@
 region: ap-northeast-1
 stackId: saitou-yuta-cdk-dev
 
+ipam:
+    ipam:
+      constructId: Ipam
+      name: saitou-yuta-prod-ipam
+    ipampool: 
+      constructId: Ipampool
+      netmask: 24
+      name: saitou-yuta-prod-ipampool
+    ipampoolcidr: 
+      constructId: Ipampoolcidr
+      cidr: 172.0.28.0/24
+      name: saitou-yuta-prod-ipampoolcidr
 vpc: 
     vpc: 
         constructId: Vpc
@@ -37,10 +49,10 @@ vpc:
         endpointecrdkr:
             constructId: S3GatewayEndpoint
             name: saitou-yuta-ecrdkr-endpoint
-# transitGateway:
-#     gateway:
-#         constructId: TransitGateway
-#         id: tgw-0b22f9da5c261d25b
+transitGateway:
+    gateway:
+        constructId: TransitGateway
+        id: tgw-03aa80e2bdcd8689f
 secretsManager: 
     dbSecret: 
         constructId: DatabaseSecret
