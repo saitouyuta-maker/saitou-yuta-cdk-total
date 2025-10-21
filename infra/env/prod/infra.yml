@@ -11,14 +11,14 @@ ipam:
       name: saitou-yuta-prod-ipampool
     ipampoolcidr: 
       constructId: Ipampoolcidr
-      cidr: 172.0.28.0/24
+      cidr: 172.0.150.0/24
       name: saitou-yuta-prod-ipampoolcidr
 vpc: 
     vpc: 
         constructId: Vpc
         ipv4IpamPoolId: ipam-pool-06ec6a4d339922a72
         ipv4NetmaskLength: 24
-        cidr: 172.0.28.0/24
+        cidr: 172.0.51.0/24
     securityGroup: 
         public:  
             constructId: PublicSecurityGroup

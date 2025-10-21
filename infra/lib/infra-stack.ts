@@ -63,7 +63,7 @@ export class InfraStack extends cdk.Stack {
 
     ///////////////////
     // VPC
-    ///////////////////
+    /////////////////// 
     const vpc = new ec2.Vpc(this, props.vpc.vpc.constructId, {
       // vpcName: props.vpc.vpc.name,
       maxAzs: 2,
