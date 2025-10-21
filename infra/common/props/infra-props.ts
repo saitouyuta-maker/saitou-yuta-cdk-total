@@ -24,6 +24,7 @@ interface InfraProps extends cdk.StackProps {
       constructId: string;
       ipv4IpamPoolId: string;
       ipv4NetmaskLength: number;
+      cidr: string;
     };
     securityGroup: {
       public: { 

@@ -24,59 +24,48 @@ export class InfraStack extends cdk.Stack {
     super(scope, id, props);
 
     const isProd = props.mode === "prod";
-    let ipamPool: ec2.CfnIPAMPool | undefined; // ← if文の外で宣言
 
+    let ipamPool: ec2.CfnIPAMPool | undefined;
+
+    ///////////////////
+    // IPAM & POOL (prodのみ)
+    ///////////////////
     if (isProd) {
-     ///////////////////
-     // IPAM
-     ///////////////////
-    const ipam = new ec2.CfnIPAM(this, props.ipam.ipam.constructId, {
-      description: "IPAM for Prod VPC management",
-      operatingRegions: [
-        {
-          regionName: cdk.Stack.of(this).region,
-        },
-      ],
-      tags: [
-        {
-          key: "Name",
-          value: props.ipam.ipam.name,
-        },
-      ],
-    });
+      // IPAM を作成
+      const ipam = new ec2.CfnIPAM(this, props.ipam.ipam.constructId, {
+        operatingRegions: [
+          {
+            regionName: cdk.Stack.of(this).region, // 現在のリージョンで有効化
+          },
+        ],
+        description: "IPAM for Prod VPC management",
+      });
 
-    ///////////////////
-    // IPAM POOL
-    ///////////////////
-    const ipamPool = new ec2.CfnIPAMPool(this, props.ipam.ipampool.constructId, {
-      addressFamily: "ipv4",
-      ipamScopeId: ipam.attrPrivateDefaultScopeId,
-      locale: cdk.Stack.of(this).region,
-      description: "Production IPAM pool",
-      allocationDefaultNetmaskLength: props.ipam.ipampool.netmask,
-      tags: [
-        {
-          key: "Name",
-           value: props.ipam.ipampool.name,
-        },
-      ],
-    });
-    ipamPool.addDependency(ipam);
+      // IPAM プールを作成
+      ipamPool = new ec2.CfnIPAMPool(this, props.ipam.ipampool.constructId, {
+        addressFamily: "ipv4",
+        ipamScopeId: ipam.attrPrivateDefaultScopeId, // Private 用スコープを使用
+        locale: cdk.Stack.of(this).region,
+        description: "Production IPAM pool",
+        allocationDefaultNetmaskLength: props.ipam.ipampool.netmask,
+      });
 
-    ///////////////////
-    // IPAM POOL CIDR 割り当て
-    ///////////////////
-    const ipamPoolCidr = new ec2.CfnIPAMPoolCidr(this, props.ipam.ipampoolcidr.constructId, {
-      ipamPoolId: ipamPool.ref,
-      cidr: props.ipam.ipampoolcidr.cidr,
-    });
-    ipamPoolCidr.addDependency(ipamPool);
-    
+      // IPAM Pool に CIDR範囲を割り当て
+      const ipamPoolCidr = new ec2.CfnIPAMPoolCidr(this, props.ipam.ipampoolcidr.constructId, {
+        ipamPoolId: ipamPool.ref,
+        cidr: props.ipam.ipampoolcidr.cidr,
+      });
+
+      // 依存関係を明示
+      ipamPool.addDependency(ipam);
+      ipamPoolCidr.addDependency(ipamPool);
+    }
+
     ///////////////////
     // VPC
     ///////////////////
     const vpc = new ec2.Vpc(this, props.vpc.vpc.constructId, {
-      //vpcName: props.vpc.vpc.name,
+      // vpcName: props.vpc.vpc.name,
       maxAzs: 2,
       subnetConfiguration: [
         {
@@ -96,13 +85,21 @@ export class InfraStack extends cdk.Stack {
         },
       ],
       natGateways: 1,
-      // ▼ IPAM から自動で CIDR を割り当てる設定 ▼
-      ipAddresses: ec2.IpAddresses.awsIpamAllocation({
-        ipv4IpamPoolId: ipamPool!.ref,   // ← IPAMプールIDを指定
-        ipv4NetmaskLength: props.vpc.vpc.ipv4NetmaskLength, // ← 割り当てたいCIDRサイズ
-      }),
-    });
-    
+      ...(isProd
+        ? {
+            // ▼ IPAM から自動で CIDR を割り当てる設定 ▼
+            ipAddresses: ec2.IpAddresses.awsIpamAllocation(
+            {
+              ipv4IpamPoolId: ipamPool!.ref, // ← IPAMプールIDを指定
+              ipv4NetmaskLength: props.vpc.vpc.ipv4NetmaskLength, // ← 割り当てたいCIDRサイズ
+            }),
+          }
+        : {
+            // DEV は固定 CIDR
+            ipAddresses: ec2.IpAddresses.cidr(props.vpc.vpc.cidr),
+          }),
+        }
+      );
     ///////////////////
     // Transit Gateway Attachment
     ///////////////////

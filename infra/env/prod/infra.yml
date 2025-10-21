@@ -1,5 +1,5 @@
 region: ap-northeast-1
-stackId: saitou-yuta-cdk-dev
+stackId: saitou-yuta-cdk-prod
 
 ipam:
     ipam:
@@ -58,7 +58,7 @@ secretsManager:
     dbSecret: 
         constructId: DatabaseSecret
         username: root
-        dbName: saitou-yuta-cdk_dev
+        dbName: saitou-yuta-cdk_prod
     djangoSecret: 
         constructId: DjangSecret
     awsAccessSecret: 
@@ -70,7 +70,7 @@ secretsManager:
 rds: 
     dbCluster: 
         constructId: RdsMySQLInstance
-        dbName: saitou_yuta_cdk_dev
+        dbName: saitou_yuta_cdk_prod
         masterUsername: root
         backupRetention: 7
         backupPreferredWindow: "17:00-18:00"
@@ -88,7 +88,7 @@ ecr:
 elb: 
     lb: 
         constructId: Elb
-        name: saitou-yuta-cdk-dev-elb
+        name: saitou-yuta-cdk-prod-elb
     listener: 
         http: 
             constructId: ElbListener
@@ -105,7 +105,7 @@ waf:
         constructId: WafWebACL
         scope: REGIONAL
         metricName: MetricForsaitou-yuta-cdkWebACL
-        name: saitou-yuta-cdk-dev-web-acl
+        name: saitou-yuta-cdk-prod-web-acl
         webACLAssociation: 
             constructId: WebACLAssociation
     ipSet: 
@@ -116,7 +116,7 @@ waf:
             constructId: AdinWhitelistIpSetV6
             scope: REGIONAL
     ipWhitelistBucket: 
-        name: ipwhitelist-saitou-yuta-cdk-dev
+        name: ipwhitelist-saitou-yuta-cdk-prod
         ipv4Filename: admin_ipv4_whitelist.txt
         ipv6Filename: admin_ipv6_whitelist.txt
 ecs: 
@@ -132,7 +132,7 @@ ecs:
     taskDef: 
         app: 
             constructId: AppTaskDefinition
-            name: saitou-yuta-cdk-dev-app-td
+            name: saitou-yuta-cdk-prod-app-td
             storage: 
                 gunicorn: 
                     volumeName: gunicorn
@@ -168,27 +168,27 @@ s3:
     bucket: 
         uploaded_files: 
             constructId: S3Bucket
-            name: saitou-yuta-cdk-uploaded-files-bucket-dev
+            name: saitou-yuta-cdk-uploaded-files-bucket-prod
     lifecyclerule: 
         uploaded_files: 
             name: delete-after-1day
 sqs: 
     queue: 
         constructId: SQSQuere
-        name: saitou-yuta-cdk-dev-celery-sqs
+        name: saitou-yuta-cdk-prod-celery-sqs
 frontend: 
     s3: 
         constructId: FrontendBucket
-        bucketName: saitou-yuta-cdk-frontend-dev
+        bucketName: saitou-yuta-cdk-frontend-prod
     cloudfront: 
         constructId: FrontendDistribution
-        distributionName: saitou-yuta-cdk-frontend-dev
+        distributionName: saitou-yuta-cdk-frontend-prod
         ipAllowlist?: 
             ipv4Cidrs: ["59.132.146.103/32"]
             ipv6Cidrs: []
         waf: 
             constructId: FrontendWebACL
-            name: saitou-yuta-cdk-frontend-dev-waf
+            name: saitou-yuta-cdk-frontend-prod-waf
             scope: CLOUDFRONT
             metricName: MetricForsaitou-yuta-cdkFrontendWAF
             webACLAssocitation: 
