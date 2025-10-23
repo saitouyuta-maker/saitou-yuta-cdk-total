@@ -70,12 +70,12 @@ export class InfraStack extends cdk.Stack {
       subnetConfiguration: [
         {
           name: "public",
-          subnetType: ec2.SubnetType.PUBLIC,
+          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
           cidrMask: 27,
         },
         {
           name: "private",
-          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+          subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
           cidrMask: 27,
         },
         {
@@ -235,7 +235,7 @@ export class InfraStack extends cdk.Stack {
       props.vpc.endpoints.endpoints3.constructId, // ← constructId を使用
       {
         service: ec2.GatewayVpcEndpointAwsService.S3,
-        subnets: [{ subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }],
+        subnets: [{ subnetType: ec2.SubnetType.PRIVATE_ISOLATED }],
       }
     );
     cdk.Tags.of(s3GatewayEndpoint).add("Name", props.vpc.endpoints.endpoints3.name);
@@ -244,7 +244,7 @@ export class InfraStack extends cdk.Stack {
     const sqsEndpoint = vpc.addInterfaceEndpoint("SqsEndpoint",
       {
         service: ec2.InterfaceVpcEndpointAwsService.SQS,
-        subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+        subnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
         privateDnsEnabled: true,
         securityGroups: [ecsVpcEndpointSg],
       });
@@ -254,7 +254,7 @@ export class InfraStack extends cdk.Stack {
     const CloudWatchLogsEndpoint = vpc.addInterfaceEndpoint("CloudWatchLogsEndpoint",
       {
         service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
-        subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+        subnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
         privateDnsEnabled: true,
         securityGroups: [ecsVpcEndpointSg],
       });
@@ -264,7 +264,7 @@ export class InfraStack extends cdk.Stack {
     const CloudWatchmonitorEndpoint = vpc.addInterfaceEndpoint("CloudWatchmonitorEndpoint",
       {
         service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_MONITORING,
-        subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+        subnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
         privateDnsEnabled: true,
         securityGroups: [ecsVpcEndpointSg],
       });
@@ -273,7 +273,7 @@ export class InfraStack extends cdk.Stack {
     const EcrApiEndpoint = vpc.addInterfaceEndpoint('EcrApiEndpoint', 
       {
         service: ec2.InterfaceVpcEndpointAwsService.ECR,
-        subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+        subnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
         securityGroups: [ecsVpcEndpointSg],
       });
     cdk.Tags.of(EcrApiEndpoint).add("Name", props.vpc.endpoints.endpointecrapi.name);
@@ -281,7 +281,7 @@ export class InfraStack extends cdk.Stack {
     // Ecrapi endpoint
     const EcrDkrEndpoint = vpc.addInterfaceEndpoint('EcrDkrEndpoint', {
         service: ec2.InterfaceVpcEndpointAwsService.ECR_DOCKER,
-        subnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+        subnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED },
         securityGroups: [ecsVpcEndpointSg],
       });
     cdk.Tags.of(EcrDkrEndpoint).add("Name", props.vpc.endpoints.endpointecrdkr.name);
@@ -458,10 +458,13 @@ export class InfraStack extends cdk.Stack {
       {
         vpc: vpc,
         loadBalancerName :props.elb.lb.name,
-        internetFacing: true,
+        internetFacing: false,
         securityGroup: publicSg,
         vpcSubnets: {
-          subnetType: ec2.SubnetType.PUBLIC,
+          subnets: [
+            vpc.selectSubnets({ subnetGroupName: "public"}).subnets[0],
+            vpc.selectSubnets({ subnetGroupName: "public"}).subnets[1],
+          ],
         },
       }
     );
@@ -887,7 +890,7 @@ export class InfraStack extends cdk.Stack {
       cluster: cluster,
       taskDefinition: appTaskDef,
       vpcSubnets: {
-        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+        subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
       },
       securityGroups: [privateSg],
       // desiredCount: props.mode === "prod" ? 2 : 1,
