@@ -84,7 +84,7 @@ export class InfraStack extends cdk.Stack {
           cidrMask: 27,
         },
       ],
-      natGateways: 1,
+      natGateways: 0,
       ...(isProd
         ? {
             // ▼ IPAM から自動で CIDR を割り当てる設定 ▼
