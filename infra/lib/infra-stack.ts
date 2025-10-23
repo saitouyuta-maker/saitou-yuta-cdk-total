@@ -100,21 +100,21 @@ export class InfraStack extends cdk.Stack {
           }),
         }
       );
-    ///////////////////
-    // Transit Gateway Attachment
-    ///////////////////
-    const privateSubnetIds = vpc.privateSubnets.map(subnet => subnet.subnetId);
+    // ///////////////////
+    // // Transit Gateway Attachment
+    // ///////////////////
+    // const privateSubnetIds = vpc.privateSubnets.map(subnet => subnet.subnetId);
 
-    // TGW Attachment (L1)
-    const tgwAttachment = new ec2.CfnTransitGatewayAttachment(
-      this,
-      props.transitGateway.gateway.constructId, // infra.yml で指定した constructId
-      {
-        transitGatewayId: props.transitGateway.gateway.id, // // ここにアカウントBのTGW
-        vpcId: vpc.vpcId,
-        subnetIds: privateSubnetIds,
-      }
-    );
+    // // TGW Attachment (L1)
+    // const tgwAttachment = new ec2.CfnTransitGatewayAttachment(
+    //   this,
+    //   props.transitGateway.gateway.constructId, // infra.yml で指定した constructId
+    //   {
+    //     transitGatewayId: props.transitGateway.gateway.id, // // ここにアカウントBのTGW
+    //     vpcId: vpc.vpcId,
+    //     subnetIds: privateSubnetIds,
+    //   }
+    // );
 
   //   vpc.privateSubnets.forEach((subnet, idx) => {
   //     new ec2.CfnRoute(this, `PrivateSubnetRoute${idx}`, {
